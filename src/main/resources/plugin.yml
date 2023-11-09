@@ -1,0 +1,6 @@
+name: GhostCore
+version: '${project.version}'
+main: me.kooper.ghostcore.GhostCore
+api-version: '1.20'
+depend:
+  - packetevents
