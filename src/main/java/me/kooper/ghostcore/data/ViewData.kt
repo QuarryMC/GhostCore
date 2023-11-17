@@ -1,8 +1,7 @@
 package me.kooper.ghostcore.data
 
 import io.papermc.paper.math.Position
-import it.unimi.dsi.fastutil.longs.Long2BooleanOpenHashMap
-import org.bukkit.Material
 import org.bukkit.block.data.BlockData
+import java.util.concurrent.ConcurrentHashMap
 
-data class ViewData(val blocks: HashMap<Position, BlockData>, var material: Material)
+data class ViewData(val name: String, val blocks: ConcurrentHashMap<Position, BlockData>, var pos1: Position, var pos2: Position, var patternData: PatternData, var isBreakable: Boolean)

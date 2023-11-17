@@ -17,6 +17,16 @@
       <option name="url" value="https://repo.codemc.io/repository/maven-releases/" />
     </remote-repository>
     <remote-repository>
+      <option name="id" value="repo" />
+      <option name="name" value="repo" />
+      <option name="url" value="https://repo.triumphteam.dev/snapshots/" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="aikar" />
+      <option name="name" value="aikar" />
+      <option name="url" value="https://repo.aikar.co/content/groups/aikar/" />
+    </remote-repository>
+    <remote-repository>
       <option name="id" value="papermc-repo" />
       <option name="name" value="papermc-repo" />
       <option name="url" value="https://repo.papermc.io/repository/maven-public/" />

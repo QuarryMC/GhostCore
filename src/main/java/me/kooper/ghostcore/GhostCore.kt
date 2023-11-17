@@ -2,8 +2,7 @@ package me.kooper.ghostcore
 
 import com.github.retrooper.packetevents.PacketEvents
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder
-import me.kooper.ghostcore.listeners.ChunkListener
-import me.kooper.ghostcore.listeners.PlayerJoinLeave
+import me.kooper.ghostcore.commands.GhostCommand
 import me.kooper.ghostcore.managers.StageManager
 import me.kooper.ghostcore.packets.PacketListener
 import org.bukkit.plugin.java.JavaPlugin
@@ -30,8 +29,7 @@ class GhostCore : JavaPlugin() {
         stageManager = StageManager()
         PacketEvents.getAPI().eventManager.registerListener(PacketListener())
         PacketEvents.getAPI().init()
-        server.pluginManager.registerEvents(ChunkListener(), this)
-        server.pluginManager.registerEvents(PlayerJoinLeave(), this)
+        server.getPluginCommand("ghost")!!.setExecutor(GhostCommand())
     }
 
     override fun onDisable() {
