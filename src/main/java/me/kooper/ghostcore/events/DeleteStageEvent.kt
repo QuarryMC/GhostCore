@@ -12,6 +12,6 @@ class DeleteStageEvent(stage: Stage) : Event() {
         private fun getHandlerList(): HandlerList = HANDLERS
     }
 
-    override fun getHandlers(): HandlerList = GhostBreakEvent.HANDLERS
+    override fun getHandlers(): HandlerList = DeleteStageEvent.HANDLERS
 
 }

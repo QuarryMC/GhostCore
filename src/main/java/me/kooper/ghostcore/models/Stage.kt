@@ -17,11 +17,6 @@ import org.bukkit.block.Block
 import org.bukkit.block.data.BlockData
 import org.bukkit.entity.Player
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.collections.HashMap
-import kotlin.collections.HashSet
-import kotlin.math.absoluteValue
-import kotlin.math.max
-import kotlin.math.min
 
 
 @Suppress("UnstableApiUsage")
@@ -51,39 +46,6 @@ class Stage(
     fun deleteView(name: String) {
         hideView(name)
         views.remove(name)
-    }
-
-    /**
-     * Retrieves a set of positions between two given positions.
-     * @param pos1 The first position.
-     * @param pos2 The second position.
-     * @return A set of positions between pos1 and pos2.
-     */
-    fun getPositionsBetween(pos1: Position, pos2: Position): Set<Position> {
-        val positions = HashSet<Position>(
-            (pos1.blockX() - pos2.blockX()).absoluteValue *
-                    (pos1.blockY() - pos2.blockY()).absoluteValue *
-                    (pos1.blockZ() - pos2.blockZ()).absoluteValue
-        )
-
-        val bottomBlockX = min(pos1.blockX(), pos2.blockX()).coerceIn(-64, 320)
-        val topBlockX = max(pos1.blockX(), pos2.blockX()).coerceIn(-64, 320)
-
-        val bottomBlockY = min(pos1.blockY(), pos2.blockY()).coerceIn(-64, 320)
-        val topBlockY = max(pos1.blockY(), pos2.blockY()).coerceIn(-64, 320)
-
-        val bottomBlockZ = min(pos1.blockZ(), pos2.blockZ()).coerceIn(-64, 320)
-        val topBlockZ = max(pos1.blockZ(), pos2.blockZ()).coerceIn(-64, 320)
-
-        repeat(topBlockX - bottomBlockX + 1) { x ->
-            repeat(topBlockZ - bottomBlockZ + 1) { z ->
-                repeat(topBlockY - bottomBlockY + 1) { y ->
-                    positions.add(Position.block(bottomBlockX + x, bottomBlockY + y, bottomBlockZ + z))
-                }
-            }
-        }
-
-        return positions
     }
 
     /**
@@ -153,7 +115,7 @@ class Stage(
      */
     fun isWithinView(name: String, position: Position): Boolean {
         val view: ViewData = views[name]!!
-        return view.blocks[position] != null
+        return position.toVector().isInAABB(view.pos2.toVector(), view.pos1.toVector())
     }
 
     /**
@@ -175,16 +137,7 @@ class Stage(
      */
     fun setAirBlock(name: String, position: Position, update: Boolean) {
         val view: ViewData = views[name]!!
-        view.blocks[position] = Material.AIR.createBlockData()
-        chunks[getChunkFromPos(position)][name]!!.blocks[position] = Material.AIR.createBlockData()
-        blocks[position] = Material.AIR.createBlockData()
-        if (!update) return
-        getViewers().forEach { player ->
-            player.sendBlockChange(
-                position.toLocation(world),
-                Material.AIR.createBlockData()
-            )
-        }
+        setBlock(view.name, position, PatternData(mapOf(Pair(Material.AIR.createBlockData(), 1.0))), update)
     }
 
     /**
@@ -214,7 +167,7 @@ class Stage(
             run {
                 val view: ViewData = views[name]!!
 
-                blocks.forEach{
+                view.blocks.forEach{
                     resetBlock(view.name, it.key, false)
                 }
 
@@ -292,7 +245,8 @@ class Stage(
         val view = views[name]!!
         val chunkBlocks = HashMap<Long, HashMap<Position, BlockData>>()
 
-        blocks.forEach { block ->
+        for (block in blocks) {
+            if (this.blocks[Position.block(block.location)] != null) continue
             val blockData = view.patternData.getRandomBlockData()
             chunkBlocks.computeIfAbsent(block.chunk.chunkKey) { HashMap() }[Position.block(block.location)] = blockData
             view.blocks[Position.block(block.location)] = blockData
@@ -311,6 +265,46 @@ class Stage(
     }
 
     /**
+     * Sets blocks in a specified view based on the provided positions, pattern, and update flag.
+     *
+     * @param name The name of the view.
+     * @param positions The list of positions where blocks should be set.
+     * @param pattern The pattern data used to determine the block data.
+     * @param update Flag indicating whether to update viewers immediately.
+     */
+    fun setBlocks(name: String, positions: List<Position>, pattern: PatternData, update: Boolean) {
+        Bukkit.getScheduler().runTaskAsynchronously(GhostCore.instance, Runnable {
+            run {
+                val view: ViewData = views[name]!!
+
+                positions.forEach {
+                    setBlock(view.name, it, pattern, update)
+                }
+            }
+        })
+    }
+
+    /**
+     * Sets a block in a specified view at the given position based on the provided pattern and update flag.
+     *
+     * @param name The name of the view.
+     * @param position The position where the block should be set.
+     * @param pattern The pattern data used to determine the block data.
+     * @param update Flag indicating whether to update viewers immediately.
+     */
+    fun setBlock(name: String, position: Position, pattern: PatternData, update: Boolean) {
+        val view: ViewData = views[name]!!
+        val blockData = pattern.getRandomBlockData()
+        view.blocks[position] = blockData
+        chunks[getChunkFromPos(position)][name]!!.blocks[position] = blockData
+        blocks[position] = blockData
+        if (!update) return
+        getViewers().forEach { player ->
+            player.sendBlockChange(position.toLocation(world), blockData)
+        }
+    }
+
+    /**
      * Removes a set of blocks from a specific view, updating the viewers.
      * @param name The name of the view to remove blocks from.
      * @param blocks The set of positions of the blocks to be removed.
@@ -318,6 +312,22 @@ class Stage(
     fun removeBlocks(name: String, blocks: Set<Position>) {
         val view: ViewData = views[name]!!
         view.blocks.keys.removeAll(blocks)
+        this.blocks.keys.removeAll(blocks)
+
+        getViewers().forEach {
+            it.sendMultiBlockChange(hashMapOf<Position, BlockData>().apply {
+                blocks.forEach { key ->
+                    val chunk = chunks[getChunkFromPos(key)]
+                    if (chunk != null && chunk[name] != null) {
+                        chunk[name]!!.blocks.remove(key)
+                        if (chunk[name]!!.blocks.isEmpty()) {
+                            chunk.remove(name)
+                        }
+                    }
+                    put(key, world.getBlockData(key.toLocation(world)))
+                }
+            })
+        }
         showView(name)
     }
 

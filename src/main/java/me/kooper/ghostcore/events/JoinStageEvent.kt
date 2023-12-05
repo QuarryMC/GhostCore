@@ -12,5 +12,5 @@ class JoinStageEvent(val player: Player, audience: AudienceData) : Event() {
         private fun getHandlerList(): HandlerList = HANDLERS
     }
 
-    override fun getHandlers(): HandlerList = GhostBreakEvent.HANDLERS
+    override fun getHandlers(): HandlerList = JoinStageEvent.HANDLERS
 }
