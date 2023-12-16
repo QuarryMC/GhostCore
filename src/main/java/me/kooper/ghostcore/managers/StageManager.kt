@@ -40,7 +40,7 @@ class StageManager {
      * @return A list of stages that the player is currently viewing.
      */
     fun getStages(player: Player) : List<Stage> {
-        return stages.values.filter { it.audience.viewers.contains(player.uniqueId) }
+        return stages.values.filter { it.audience.contains(player.uniqueId) }
     }
 
     /**
@@ -50,10 +50,7 @@ class StageManager {
      * @return The created stage
      */
     fun createStage(stage: Stage) : Stage? {
-        if (stages.containsKey(stage.name)) {
-            Bukkit.getLogger().severe("Stage with name ${stage.name} already exists!")
-            return null
-        }
+        if (stages.containsKey(stage.name)) return null
         stages[stage.name] = stage
         StageCreateEvent(stage).callEvent()
         return stage
@@ -65,10 +62,7 @@ class StageManager {
      * @param name The name of the stage to delete.
      */
     fun deleteStage(name: String) {
-        if (stages[name] == null) {
-            Bukkit.getLogger().severe("Stage deletion failed as stage with name $name does not exist!")
-            return
-        }
+        if (stages[name] == null) return
         deleteStage(stages[name]!!)
     }
 

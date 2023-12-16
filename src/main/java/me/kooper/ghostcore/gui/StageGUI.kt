@@ -7,13 +7,11 @@ import me.kooper.ghostcore.GhostCore
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
-import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Player
 
 
 class StageGUI(private val player: Player) {
-
     init {
         val gui: PaginatedGui =
             Gui.paginated().title(Component.text("Ghost Core ✦ Stages")).rows(6).pageSize(45).disableAllInteractions()
@@ -36,7 +34,7 @@ class StageGUI(private val player: Player) {
         )
 
         for ((name, stage) in GhostCore.instance.stageManager.stages) {
-            val material = if (stage.audience.viewers.size == 0) Material.BARRIER else Material.NOTE_BLOCK
+            val material = if (stage.audience.size == 0) Material.BARRIER else Material.NOTE_BLOCK
             gui.addItem(
                 ItemBuilder.from(material).name(
                     Component.text(name).color(TextColor.color(197, 205, 216)).decoration(TextDecoration.ITALIC, false)

@@ -67,7 +67,7 @@ class ViewGUI(player: Player, stage: Stage) {
                 ).decoration(TextDecoration.ITALIC, false)
             ),
             {
-                if (stage.audience.viewers.contains(player.uniqueId)) {
+                if (stage.audience.contains(player.uniqueId)) {
                     stage.removePlayer(player)
                 } else {
                     stage.addPlayer(player)
@@ -77,7 +77,7 @@ class ViewGUI(player: Player, stage: Stage) {
             {
                  listOf(
                     Component.text(""),
-                    Component.text(if (stage.audience.viewers.contains(player.uniqueId)) "Click to Hide" else "Click to View")
+                    Component.text(if (stage.audience.contains(player.uniqueId)) "Click to Hide" else "Click to View")
                         .color(TextColor.color(233, 233, 233)).decoration(TextDecoration.ITALIC, false))
             }
         ))

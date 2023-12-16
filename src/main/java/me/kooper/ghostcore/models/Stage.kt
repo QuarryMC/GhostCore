@@ -3,8 +3,6 @@ package me.kooper.ghostcore.models
 import io.papermc.paper.math.Position
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap
 import me.kooper.ghostcore.GhostCore
-import me.kooper.ghostcore.data.AudienceData
-import me.kooper.ghostcore.data.ChunkData
 import me.kooper.ghostcore.data.PatternData
 import me.kooper.ghostcore.data.ViewData
 import me.kooper.ghostcore.events.JoinStageEvent
@@ -13,9 +11,9 @@ import org.bukkit.Bukkit
 import org.bukkit.Chunk
 import org.bukkit.Material
 import org.bukkit.World
-import org.bukkit.block.Block
 import org.bukkit.block.data.BlockData
 import org.bukkit.entity.Player
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 
@@ -23,13 +21,13 @@ import java.util.concurrent.ConcurrentHashMap
 class Stage(
     val world: World,
     val name: String,
-    val audience: AudienceData,
+    val audience: ArrayList<UUID>,
     val views: HashMap<String, ViewData>,
     val blocks: ConcurrentHashMap<Position, BlockData>,
-    val chunks: Long2ObjectOpenHashMap<HashMap<String, ChunkData>>
+    val chunks: Long2ObjectOpenHashMap<HashMap<String, HashMap<Position, BlockData>>>
 ) {
 
-    constructor(world: World, name: String, audience: AudienceData) : this(
+    constructor(world: World, name: String, audience: ArrayList<UUID>) : this(
         world,
         name,
         audience,
@@ -68,7 +66,7 @@ class Stage(
      * @return The list of players viewing the stage.
      */
     fun getViewers(): List<Player> {
-        return audience.viewers.mapNotNull { viewerUUID ->
+        return audience.mapNotNull { viewerUUID ->
             Bukkit.getPlayer(viewerUUID)
         }.toList()
     }
@@ -125,7 +123,7 @@ class Stage(
      */
     fun updateChunkView(name: String, chunk: Long) {
         for (viewer in getViewers()) {
-            viewer.sendMultiBlockChange(chunks[chunk][name]!!.blocks)
+            viewer.sendMultiBlockChange(chunks[chunk][name]!!)
         }
     }
 
@@ -187,7 +185,7 @@ class Stage(
 
         val randomBlockData = view.patternData.getRandomBlockData()
         blocks[position] = randomBlockData
-        chunks[getChunkFromPos(position)][name]!!.blocks[position] = randomBlockData
+        chunks[getChunkFromPos(position)][name]!![position] = randomBlockData
         view.blocks[position] = randomBlockData
 
         if (update) showView(name)
@@ -241,23 +239,23 @@ class Stage(
      * @param name The name of the view to add blocks to.
      * @param blocks The set of blocks to be added.
      */
-    fun addBlocks(name: String, blocks: Set<Block>) {
+    fun addBlocks(name: String, positions: Set<Position>) {
         val view = views[name]!!
         val chunkBlocks = HashMap<Long, HashMap<Position, BlockData>>()
 
-        for (block in blocks) {
-            if (this.blocks[Position.block(block.location)] != null) continue
+        for (position in positions) {
+            if (this.blocks[position] != null) continue
             val blockData = view.patternData.getRandomBlockData()
-            chunkBlocks.computeIfAbsent(block.chunk.chunkKey) { HashMap() }[Position.block(block.location)] = blockData
-            view.blocks[Position.block(block.location)] = blockData
-            this.blocks[Position.block(block.location)] = blockData
+            chunkBlocks.computeIfAbsent(getChunkFromPos(position)) { HashMap() }[position] = blockData
+            view.blocks[position] = blockData
+            this.blocks[position] = blockData
         }
 
         chunkBlocks.forEach { (chunk, data) ->
             if (chunks[chunk] != null) {
-                chunks[chunk][name] = ChunkData(data)
+                chunks[chunk][name] = data
             } else {
-                chunks[chunk] = hashMapOf(Pair(name, ChunkData(data)))
+                chunks[chunk] = hashMapOf(Pair(name, data))
             }
         }
 
@@ -296,7 +294,7 @@ class Stage(
         val view: ViewData = views[name]!!
         val blockData = pattern.getRandomBlockData()
         view.blocks[position] = blockData
-        chunks[getChunkFromPos(position)][name]!!.blocks[position] = blockData
+        chunks[getChunkFromPos(position)][name]!![position] = blockData
         blocks[position] = blockData
         if (!update) return
         getViewers().forEach { player ->
@@ -319,8 +317,8 @@ class Stage(
                 blocks.forEach { key ->
                     val chunk = chunks[getChunkFromPos(key)]
                     if (chunk != null && chunk[name] != null) {
-                        chunk[name]!!.blocks.remove(key)
-                        if (chunk[name]!!.blocks.isEmpty()) {
+                        chunk[name]!!.remove(key)
+                        if (chunk[name]!!.isEmpty()) {
                             chunk.remove(name)
                         }
                     }
@@ -342,19 +340,19 @@ class Stage(
      */
     fun createView(
         name: String,
-        blocks: HashSet<Block>,
+        positions: HashSet<Position>,
         pos1: Position,
         pos2: Position,
         pattern: PatternData,
         isBreakable: Boolean
     ): ViewData? {
         if (views.containsKey(name)) {
-            Bukkit.getLogger().severe("View with $name already exists for stage $name!")
+            Bukkit.getLogger().severe("View with $name already exists for stage ${this.name}!")
             return null
         }
         val view = ViewData(name, ConcurrentHashMap(), pos1, pos2, pattern, isBreakable)
         views[name] = view
-        addBlocks(name, blocks)
+        Bukkit.getScheduler().runTaskAsynchronously(GhostCore.instance, Runnable { run { addBlocks(name, positions) } })
         return view
     }
 
@@ -363,9 +361,9 @@ class Stage(
      * @param player The player to be added to the audience.
      */
     fun addPlayer(player: Player) {
-        audience.viewers.add(player.uniqueId)
+        audience.add(player.uniqueId)
 
-        JoinStageEvent(player, audience).callEvent()
+        JoinStageEvent(player, audience, this).callEvent()
 
         Bukkit.getScheduler().runTaskAsynchronously(GhostCore.instance, Runnable {
             run {
@@ -381,9 +379,9 @@ class Stage(
      * @param player The player to be removed from the audience.
      */
     fun removePlayer(player: Player) {
-        audience.viewers.remove(player.uniqueId)
+        audience.remove(player.uniqueId)
 
-        LeaveStageEvent(player, audience).callEvent()
+        LeaveStageEvent(player, audience, this).callEvent()
 
         Bukkit.getScheduler().runTaskAsynchronously(GhostCore.instance, Runnable {
             run {

@@ -104,7 +104,7 @@ class PacketListener : SimplePacketListenerAbstract() {
                     if (stage.world != (event.player as Player).world) return
                     if (stage.chunks[chunkKey] == null) continue
                     for (chunk in stage.chunks[chunkKey].values) {
-                        player.sendMultiBlockChange(chunk.blocks)
+                        player.sendMultiBlockChange(chunk)
                     }
                 }
             }
