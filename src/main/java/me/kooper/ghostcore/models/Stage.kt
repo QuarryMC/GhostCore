@@ -230,6 +230,7 @@ class Stage(
      * @param newPatternData The new pattern for the blocks.
      */
     fun changePattern(name: String, newPatternData: PatternData) {
+        println(newPatternData)
         views[name]!!.patternData = newPatternData
         resetBlocks(name)
     }
