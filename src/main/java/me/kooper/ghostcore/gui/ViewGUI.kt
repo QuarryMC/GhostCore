@@ -41,7 +41,7 @@ class ViewGUI(player: Player, stage: Stage) {
             ).asGuiItem()
         )
 
-        val getAudienceLore : () -> List<Component> = {
+        val getAudienceLore: () -> List<Component> = {
             var audienceLore: ArrayList<Component> = ArrayList()
             for (player in stage.getViewers()) {
                 audienceLore.add(Component.text(" ➥ ${player.name}"))
@@ -62,23 +62,20 @@ class ViewGUI(player: Player, stage: Stage) {
 
         gui.setItem(12, createItem(
             ItemBuilder.from(Material.ENDER_EYE).name(
-                Component.text("Toggle Visibility").color(
+                Component.text("Spectate").color(
                     TextColor.color(113, 113, 113)
                 ).decoration(TextDecoration.ITALIC, false)
             ),
             {
-                if (stage.audience.contains(player.uniqueId)) {
-                    stage.removePlayer(player)
-                } else {
-                    stage.addPlayer(player)
-                }
+                GhostCore.instance.stageManager.toggleSpectate(player, stage)
                 gui.updateItem(14, audienceItem.lore(getAudienceLore.invoke()).asGuiItem())
             },
             {
-                 listOf(
+                listOf(
                     Component.text(""),
-                    Component.text(if (stage.audience.contains(player.uniqueId)) "Click to Hide" else "Click to View")
-                        .color(TextColor.color(233, 233, 233)).decoration(TextDecoration.ITALIC, false))
+                    Component.text(if (stage.audience.contains(player.uniqueId)) "Click to Hide" else "Click to Spectate")
+                        .color(TextColor.color(233, 233, 233)).decoration(TextDecoration.ITALIC, false)
+                )
             }
         ))
 
@@ -95,8 +92,7 @@ class ViewGUI(player: Player, stage: Stage) {
                 {
                     var viewLore: ArrayList<Component> = arrayListOf(
                         Component.text(""),
-                        Component.text("Position 1: ${view.pos1.blockX()}, ${view.pos1.blockY()}, ${view.pos1.blockZ()}"),
-                        Component.text("Position 2: ${view.pos2.blockX()}, ${view.pos2.blockY()}, ${view.pos2.blockZ()}"),
+                        Component.text("Blocks: ${view.blocks.size}"),
                         Component.text("Breakable: ${view.isBreakable}"),
                         Component.text(""),
                         Component.text("Pattern:")
@@ -117,11 +113,11 @@ class ViewGUI(player: Player, stage: Stage) {
             Bukkit.getScheduler().runTaskLater(GhostCore.instance, Runnable { run { StageGUI(player) } }, 1L)
         }
 
-       gui.open(player)
+        gui.open(player)
     }
 
-    private fun createItem(item: ItemBuilder, action: Runnable, lore: () -> List<Component>) : GuiItem {
-        return item.lore(lore.invoke()).asGuiItem{
+    private fun createItem(item: ItemBuilder, action: Runnable, lore: () -> List<Component>): GuiItem {
+        return item.lore(lore.invoke()).asGuiItem {
             action.run()
             gui.updateItem(it.slot, createItem(item, action, lore))
         }

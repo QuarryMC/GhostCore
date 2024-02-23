@@ -18,7 +18,6 @@ import org.bukkit.Bukkit
 import org.bukkit.Chunk
 import org.bukkit.GameMode
 import org.bukkit.block.data.BlockData
-import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 
 
@@ -67,9 +66,7 @@ class PacketListener : SimplePacketListenerAbstract() {
 
                 if (actionType == DiggingAction.START_DIGGING && (player.gameMode == GameMode.CREATIVE || GhostCore.instance.instaBreak.contains(
                         block.material
-                    ) || player.inventory.itemInMainHand.getEnchantmentLevel(
-                        Enchantment.DIG_SPEED
-                    ) > 5) ||
+                ) || (block.getDestroySpeed(player.inventory.itemInMainHand, true) >= block.material.hardness * 30) && !player.isFlying || (block.getDestroySpeed(player.inventory.itemInMainHand, true) >= block.material.hardness * 150) && player.isFlying) ||
                     actionType == DiggingAction.FINISHED_DIGGING
                 ) {
                     if (!view.isBreakable) {

@@ -3,6 +3,7 @@ package me.kooper.ghostcore
 import com.github.retrooper.packetevents.PacketEvents
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder
 import me.kooper.ghostcore.commands.GhostCommand
+import me.kooper.ghostcore.listeners.StageListeners
 import me.kooper.ghostcore.managers.StageManager
 import me.kooper.ghostcore.packets.PacketListener
 import org.bukkit.Material
@@ -34,6 +35,7 @@ class GhostCore : JavaPlugin() {
         PacketEvents.getAPI().eventManager.registerListener(PacketListener())
         PacketEvents.getAPI().init()
         server.getPluginCommand("ghost")!!.setExecutor(GhostCommand())
+        server.pluginManager.registerEvents(StageListeners(), this)
     }
 
     override fun onDisable() {

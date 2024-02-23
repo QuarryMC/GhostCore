@@ -1,6 +1,7 @@
 package me.kooper.ghostcore.data
 
 import org.bukkit.block.data.BlockData
+import org.decimal4j.util.DoubleRounder
 
 class PatternData(val blockDataPercentages: Map<BlockData, Double>) {
     init {
@@ -10,7 +11,7 @@ class PatternData(val blockDataPercentages: Map<BlockData, Double>) {
         require(blockDataPercentages.isNotEmpty()) {
             "Pattern must contain at least one BlockData with a non-zero percentage"
         }
-        require(blockDataPercentages.values.sum() <= 1.0) {
+        require(DoubleRounder.round(blockDataPercentages.values.sum(), 5) <= 1.0) {
             "Sum of percentages must not exceed 1.0"
         }
     }

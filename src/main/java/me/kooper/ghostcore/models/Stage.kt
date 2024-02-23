@@ -15,6 +15,8 @@ import org.bukkit.block.data.BlockData
 import org.bukkit.entity.Player
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.ArrayList
+import kotlin.collections.HashSet
 
 
 @Suppress("UnstableApiUsage")
@@ -47,21 +49,6 @@ class Stage(
     }
 
     /**
-     * Calculates the percentage of non-air blocks in a given view.
-     * @param name The name of the view.
-     * @return The percentage of non-air blocks.
-     */
-    fun getPercentAir(name: String): Double {
-        val view: ViewData = views[name]!!
-
-        val nonAirCount = view.blocks.count { it.value.material != Material.AIR }
-        val totalBlocks = view.blocks.size.toDouble()
-
-        val percent = nonAirCount / totalBlocks
-        return percent
-    }
-
-    /**
      * Retrieves the list of players who are viewing the stage.
      * @return The list of players viewing the stage.
      */
@@ -87,7 +74,7 @@ class Stage(
     fun showView(name: String) {
         for (viewer in getViewers()) {
             if (viewer.world != world) continue
-            viewer.sendMultiBlockChange(getSolidBlocks(name))
+            viewer.sendMultiBlockChange(views[name]!!.blocks)
         }
     }
 
@@ -113,7 +100,7 @@ class Stage(
      */
     fun isWithinView(name: String, position: Position): Boolean {
         val view: ViewData = views[name]!!
-        return position.toVector().isInAABB(view.pos2.toVector(), view.pos1.toVector())
+        return view.blocks[position] != null
     }
 
     /**
@@ -146,9 +133,11 @@ class Stage(
     fun setAirBlocks(name: String, positions: Set<Position>) {
         Bukkit.getScheduler().runTaskAsynchronously(GhostCore.instance, Runnable {
             run {
-                positions.forEach { pos -> setAirBlock(name, pos, false) }
                 val change: HashMap<Position, BlockData> = HashMap()
-                positions.forEach { pos -> change[pos] = Material.AIR.createBlockData() }
+                positions.forEach {
+                    pos -> setAirBlock(name, pos, false)
+                    change[pos] = Material.AIR.createBlockData()
+                }
                 getViewers().forEach { player ->
                     player.sendMultiBlockChange(change)
                 }
@@ -166,6 +155,24 @@ class Stage(
                 val view: ViewData = views[name]!!
 
                 view.blocks.forEach{
+                    resetBlock(view.name, it.key, false)
+                }
+
+                showView(view.name)
+            }
+        })
+    }
+
+    /**
+     * Resets all solid blocks asynchronously in a specific view to their original pattern, updating the viewers.
+     * @param name The name of the view to be reset.
+     */
+    fun resetSolidBlocks(name: String) {
+        Bukkit.getScheduler().runTaskAsynchronously(GhostCore.instance, Runnable {
+            run {
+                val view: ViewData = views[name]!!
+
+                getSolidBlocks(name).forEach{
                     resetBlock(view.name, it.key, false)
                 }
 
@@ -197,8 +204,8 @@ class Stage(
      * @return A map of solid blocks in the specified view.
      */
     fun getSolidBlocks(name: String): Map<Position, BlockData> {
-        val blocks = getBlocks(name)
-        blocks.entries.removeIf { it.value.material == Material.AIR }
+        val blocks = ConcurrentHashMap(getBlocks(name))
+        blocks.entries.removeIf{ it.value.material == Material.AIR }
         return blocks
     }
 
@@ -230,15 +237,14 @@ class Stage(
      * @param newPatternData The new pattern for the blocks.
      */
     fun changePattern(name: String, newPatternData: PatternData) {
-        println(newPatternData)
         views[name]!!.patternData = newPatternData
-        resetBlocks(name)
+        resetSolidBlocks(name)
     }
 
     /**
      * Adds a set of blocks to a specific view, updating the viewers.
      * @param name The name of the view to add blocks to.
-     * @param blocks The set of blocks to be added.
+     * @param positions The set of positions to be added.
      */
     fun addBlocks(name: String, positions: Set<Position>) {
         val view = views[name]!!
@@ -269,16 +275,17 @@ class Stage(
      * @param name The name of the view.
      * @param positions The list of positions where blocks should be set.
      * @param pattern The pattern data used to determine the block data.
-     * @param update Flag indicating whether to update viewers immediately.
      */
-    fun setBlocks(name: String, positions: List<Position>, pattern: PatternData, update: Boolean) {
+    fun setBlocks(name: String, positions: List<Position>, pattern: PatternData) {
         Bukkit.getScheduler().runTaskAsynchronously(GhostCore.instance, Runnable {
             run {
                 val view: ViewData = views[name]!!
 
                 positions.forEach {
-                    setBlock(view.name, it, pattern, update)
+                    setBlock(view.name, it, pattern, false)
                 }
+
+                showView(name)
             }
         })
     }
@@ -294,6 +301,9 @@ class Stage(
     fun setBlock(name: String, position: Position, pattern: PatternData, update: Boolean) {
         val view: ViewData = views[name]!!
         val blockData = pattern.getRandomBlockData()
+        if (!view.blocks.containsKey(position)) {
+            return
+        }
         view.blocks[position] = blockData
         chunks[getChunkFromPos(position)][name]!![position] = blockData
         blocks[position] = blockData
@@ -333,17 +343,13 @@ class Stage(
     /**
      * Creates a new view with the specified name, blocks, positions, and block pattern.
      * @param name The name of the new view.
-     * @param blocks The set of blocks to be included in the view.
-     * @param pos1 The first position defining the bounding box of the view.
-     * @param pos2 The second position defining the bounding box of the view.
+     * @param positions The set of positions to be included in the view.
      * @param pattern The block pattern for the blocks in the view.
      * @return The newly created ViewData object, or null if a view with the same name already exists.
      */
     fun createView(
         name: String,
         positions: HashSet<Position>,
-        pos1: Position,
-        pos2: Position,
         pattern: PatternData,
         isBreakable: Boolean
     ): ViewData? {
@@ -351,9 +357,9 @@ class Stage(
             Bukkit.getLogger().severe("View with $name already exists for stage ${this.name}!")
             return null
         }
-        val view = ViewData(name, ConcurrentHashMap(), pos1, pos2, pattern, isBreakable)
+        val view = ViewData(name, ConcurrentHashMap(), pattern, isBreakable)
         views[name] = view
-        Bukkit.getScheduler().runTaskAsynchronously(GhostCore.instance, Runnable { run { addBlocks(name, positions) } })
+        addBlocks(name, positions)
         return view
     }
 

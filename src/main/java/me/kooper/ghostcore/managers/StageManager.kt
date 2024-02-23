@@ -2,36 +2,20 @@ package me.kooper.ghostcore.managers
 
 import me.kooper.ghostcore.GhostCore
 import me.kooper.ghostcore.events.DeleteStageEvent
+import me.kooper.ghostcore.events.SpectateStageEvent
 import me.kooper.ghostcore.events.StageCreateEvent
 import me.kooper.ghostcore.models.Stage
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.TextColor
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 class StageManager {
     val stages: ConcurrentHashMap<String, Stage> = ConcurrentHashMap()
-    private val toBeDeleted: ConcurrentHashMap<String, Long> = ConcurrentHashMap()
-
-    init {
-        Bukkit.getScheduler().runTaskTimerAsynchronously(GhostCore.instance, Runnable {
-            run {
-                for ((name, stage) in stages) {
-                    if (stage.getViewers().isNotEmpty() && !toBeDeleted.containsKey(name)) continue
-                    if (toBeDeleted.containsKey(name)) {
-                        if (stage.getViewers().isNotEmpty()) {
-                            toBeDeleted.remove(name)
-                            continue
-                        }
-                        if (System.currentTimeMillis() < toBeDeleted[name]!!) continue
-                        toBeDeleted.remove(name)
-                        deleteStage(stage)
-                    } else {
-                        toBeDeleted[name] = System.currentTimeMillis() + 60000
-                    }
-                }
-            }
-        }, 0L, 1200L)
-    }
+    val spectatorPrevStages: HashMap<UUID, ArrayList<Stage>> = HashMap()
+    val spectators: HashMap<UUID, Stage> = HashMap()
 
     /**
      * Get a list of stages that a player is currently viewing.
@@ -52,7 +36,7 @@ class StageManager {
     fun createStage(stage: Stage) : Stage? {
         if (stages.containsKey(stage.name)) return null
         stages[stage.name] = stage
-        StageCreateEvent(stage).callEvent()
+        Bukkit.getScheduler().runTask(GhostCore.instance, Runnable { run { StageCreateEvent(stage).callEvent() } })
         return stage
     }
 
@@ -74,6 +58,10 @@ class StageManager {
     fun deleteStage(stage: Stage) {
         Bukkit.getScheduler().runTask(GhostCore.instance, Runnable { run { DeleteStageEvent(stage).callEvent() } })
         for (viewer in stage.getViewers()) {
+            if (spectators[viewer.uniqueId] != null) {
+                toggleSpectate(viewer, stage)
+                viewer.sendMessage(Component.text("The player you were spectating has left.").color(TextColor.color(233, 233, 233)))
+            }
             stage.removePlayer(viewer)
         }
         stages.remove(stage.name)
@@ -87,6 +75,36 @@ class StageManager {
      */
     fun getStage(name: String) : Stage? {
         return stages[name]
+    }
+
+    fun toggleSpectate(player: Player, stage: Stage) {
+        if (spectatorPrevStages[player.uniqueId] != null && !stage.audience.contains(player.uniqueId)) {
+            player.sendMessage(
+                Component.text("You are already spectating a player.").color(TextColor.color(233, 233, 233))
+            )
+            return
+        }
+        if (stage.audience.contains(player.uniqueId)) {
+            stage.removePlayer(player)
+            Bukkit.getScheduler().runTaskLater(GhostCore.instance, Runnable {
+                spectatorPrevStages[player.uniqueId]?.forEach {
+                    it.addPlayer(player)
+                }
+                spectatorPrevStages.remove(player.uniqueId)
+                spectators.remove(player.uniqueId)
+            }, 20L)
+            SpectateStageEvent(player, stage, false).callEvent()
+        } else {
+            spectatorPrevStages[player.uniqueId] = ArrayList(getStages(player))
+            spectators[player.uniqueId] = stage
+            spectatorPrevStages[player.uniqueId]?.forEach {
+                it.removePlayer(player)
+            }
+            Bukkit.getScheduler().runTaskLater(GhostCore.instance, Runnable {
+                stage.addPlayer(player)
+            }, 20L)
+            SpectateStageEvent(player, stage, true).callEvent()
+        }
     }
 
 }
