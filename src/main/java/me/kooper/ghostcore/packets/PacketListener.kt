@@ -17,6 +17,7 @@ import me.kooper.ghostcore.models.Stage
 import org.bukkit.Bukkit
 import org.bukkit.Chunk
 import org.bukkit.GameMode
+import org.bukkit.Material
 import org.bukkit.block.data.BlockData
 import org.bukkit.entity.Player
 
@@ -35,8 +36,8 @@ class PacketListener : SimplePacketListenerAbstract() {
                 )
 
                 val player = event.player as Player
-                val isCancelled = GhostCore.instance.stageManager.getStages(player).any { stage ->
-                    stage.blocks.containsKey(blockPosition) && stage.world == player.world
+                val isCancelled = GhostCore.instance.stageManager.getStages(player).filter { it.getViewFromPos(blockPosition) != null }.any { stage ->
+                    stage.getViewFromPos(blockPosition)!!.blocks.containsKey(blockPosition) && stage.world == player.world
                 }
 
                 event.isCancelled = isCancelled
@@ -49,9 +50,11 @@ class PacketListener : SimplePacketListenerAbstract() {
                 val diggingPosition =
                     Position.block(digging.blockPosition.x, digging.blockPosition.y, digging.blockPosition.z)
                 val block: BlockData = GhostCore.instance.stageManager.getStages(player)
-                    .asSequence()
+                    .asSequence().filter {
+                        it.getViewFromPos(diggingPosition) != null
+                    }
                     .mapNotNull { stage ->
-                        stage.blocks[diggingPosition]
+                        stage.getViewFromPos(diggingPosition)!!.blocks[diggingPosition]
                     }
                     .firstOrNull() ?: return
                 val stage: Stage = GhostCore.instance.stageManager.getStages(player).firstOrNull { stage ->
@@ -80,7 +83,10 @@ class PacketListener : SimplePacketListenerAbstract() {
                         run {
                             val ghostBreakEvent = GhostBreakEvent(player, diggingPosition, block, view, stage)
                             ghostBreakEvent.callEvent()
-                            if (!ghostBreakEvent.isCancelled) stage.setAirBlock(view.name, diggingPosition, true)
+                            if (!ghostBreakEvent.isCancelled) {
+                                player.sendBlockChange(diggingPosition.toLocation(stage.world), Material.AIR.createBlockData())
+                                stage.setBlock(view.name, diggingPosition, Material.AIR.createBlockData(), false)
+                            }
                         }
                     })
                 }

@@ -14,18 +14,26 @@ import org.bukkit.entity.Player
 class GhostCommand : CommandExecutor {
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>?): Boolean {
         if (sender !is Player) return true
-        if (!sender.hasPermission("ghostcore.admin")) {
-            sender.sendMessage(Component.text("You do not have permission to use this command!").color(TextColor.color(255, 204, 205)))
-            return true
-        }
         if (args == null || args.isEmpty()) {
+            if (!sender.hasPermission("ghostcore.admin")) {
+                sender.sendMessage(Component.text("You do not have permission to use this command!").color(TextColor.color(255, 204, 205)))
+                return true
+            }
             val player: Player = sender
             StageGUI(player)
         } else {
+            if (!sender.hasPermission("ghostcore.mod")) {
+                sender.sendMessage(Component.text("You do not have permission to use this command!").color(TextColor.color(255, 204, 205)))
+                return true
+            }
             if (args[0].lowercase().contentEquals("spectate")) {
                 val player: Player? = Bukkit.getPlayer(args[1])
                 if (player == null || !player.isOnline) {
                     sender.sendMessage(Component.text("This player is not online!").color(TextColor.color(255, 204, 205)))
+                    return true
+                }
+                if (player == sender) {
+                    sender.sendMessage(Component.text("You can't spectate yourself!").color(TextColor.color(255, 204, 205)))
                     return true
                 }
                 GhostCore.instance.stageManager.toggleSpectate(sender, GhostCore.instance.stageManager.getStages(player)[0])

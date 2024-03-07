@@ -15,8 +15,6 @@ import org.bukkit.block.data.BlockData
 import org.bukkit.entity.Player
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.collections.ArrayList
-import kotlin.collections.HashSet
 
 
 @Suppress("UnstableApiUsage")
@@ -25,19 +23,26 @@ class Stage(
     val name: String,
     val audience: ArrayList<UUID>,
     val views: HashMap<String, ViewData>,
-    val blocks: ConcurrentHashMap<Position, BlockData>,
     val chunks: Long2ObjectOpenHashMap<HashMap<String, HashMap<Position, BlockData>>>
 ) {
+
+//    init {        Bukkit.getScheduler().runTaskTimerAsynchronously(GhostCore.instance, Runnable {
+////            run {
+////                views.forEach {
+////                    showView(it.key)
+////                }
+////            }
+////        }, 0L, 600L)
+////
+//    }
 
     constructor(world: World, name: String, audience: ArrayList<UUID>) : this(
         world,
         name,
         audience,
         HashMap(),
-        ConcurrentHashMap(),
         Long2ObjectOpenHashMap()
     )
-
 
     /**
      * Deletes a view by hiding it and removing it from the views map.
@@ -72,10 +77,7 @@ class Stage(
      * @param name The name of the view to be shown.
      */
     fun showView(name: String) {
-        for (viewer in getViewers()) {
-            if (viewer.world != world) continue
-            viewer.sendMultiBlockChange(views[name]!!.blocks)
-        }
+        sendBlocks(views[name]!!.blocks)
     }
 
     /**
@@ -83,11 +85,9 @@ class Stage(
      * @param name The name of the view to be hidden.
      */
     fun hideView(name: String) {
-        for (viewer in getViewers()) {
-            val blocks: ConcurrentHashMap<Position, BlockData> = getBlocks(name)
-            blocks.keys.forEach { pos -> blocks[pos] = Material.AIR.createBlockData() }
-            viewer.sendMultiBlockChange(blocks)
-        }
+        val blocks: ConcurrentHashMap<Position, BlockData> = getBlocks(name)
+        blocks.keys.forEach { pos -> blocks[pos] = Material.AIR.createBlockData() }
+        sendBlocks(blocks)
     }
 
     /**
@@ -109,8 +109,17 @@ class Stage(
      * @param chunk The key of the chunk to be updated.
      */
     fun updateChunkView(name: String, chunk: Long) {
+        sendBlocks(chunks[chunk][name]!!)
+    }
+
+    /**
+     * Updates blocks by sending a multi block change (RUN ASYNC)
+     * @param blocks The blocks to be updated.
+     */
+    fun sendBlocks(blocks: Map<Position, BlockData>) {
         for (viewer in getViewers()) {
-            viewer.sendMultiBlockChange(chunks[chunk][name]!!)
+            if (viewer.world != world) continue
+            viewer.sendMultiBlockChange(blocks)
         }
     }
 
@@ -118,84 +127,76 @@ class Stage(
      * Sets a block in a specific view to air, updating the viewers.
      * @param name The name of the view containing the block.
      * @param position The position of the block to be set to air.
-     * @param update If the block should update to the audience
+     * @param update Whether to update the view on the next tick.
      */
     fun setAirBlock(name: String, position: Position, update: Boolean) {
         val view: ViewData = views[name]!!
-        setBlock(view.name, position, PatternData(mapOf(Pair(Material.AIR.createBlockData(), 1.0))), update)
+        setBlock(view.name, position, Material.AIR.createBlockData(), update)
     }
 
     /**
-     * Sets multiple blocks asynchronously in a specific view to air, updating the viewers.
+     * Sets multiple blocks in a specific view to air, updating the viewers. (CALL ASYNC)
      * @param name The name of the view containing the blocks.
      * @param positions The set of positions of the blocks to be set to air.
      */
     fun setAirBlocks(name: String, positions: Set<Position>) {
-        Bukkit.getScheduler().runTaskAsynchronously(GhostCore.instance, Runnable {
-            run {
-                val change: HashMap<Position, BlockData> = HashMap()
-                positions.forEach {
-                    pos -> setAirBlock(name, pos, false)
-                    change[pos] = Material.AIR.createBlockData()
-                }
-                getViewers().forEach { player ->
-                    player.sendMultiBlockChange(change)
-                }
-            }
-        })
+        val view: ViewData = views[name]!!
+        val blocksToAdd = HashMap<Position, BlockData>()
+
+        positions.forEach {
+            setAirBlock(name, it, false)
+            blocksToAdd[it] = Material.AIR.createBlockData()
+        }
+
+        view.blocksChange.putAll(blocksToAdd)
     }
 
     /**
-     * Resets all blocks asynchronously in a specific view to their original pattern, updating the viewers.
+     * Resets all blocks in a specific view to their original pattern, updating the viewers. (CALL ASYNC)
      * @param name The name of the view to be reset.
      */
     fun resetBlocks(name: String) {
-        Bukkit.getScheduler().runTaskAsynchronously(GhostCore.instance, Runnable {
-            run {
-                val view: ViewData = views[name]!!
+        val view: ViewData = views[name]!!
+        val blocksToAdd = HashMap<Position, BlockData>()
 
-                view.blocks.forEach{
-                    resetBlock(view.name, it.key, false)
-                }
+        view.blocks.forEach{
+            val blockData = view.patternData.getRandomBlockData()
+            resetBlock(view.name, it.key, blockData, false)
+            blocksToAdd[it.key] = blockData
+        }
 
-                showView(view.name)
-            }
-        })
+        view.blocksChange.putAll(blocksToAdd)
     }
 
     /**
-     * Resets all solid blocks asynchronously in a specific view to their original pattern, updating the viewers.
+     * Resets all solid blocks in a specific view to their original pattern, updating the viewers. (CALL ASYNC)
      * @param name The name of the view to be reset.
      */
     fun resetSolidBlocks(name: String) {
-        Bukkit.getScheduler().runTaskAsynchronously(GhostCore.instance, Runnable {
-            run {
-                val view: ViewData = views[name]!!
+        val view: ViewData = views[name]!!
+        val blocksToAdd = HashMap<Position, BlockData>()
 
-                getSolidBlocks(name).forEach{
-                    resetBlock(view.name, it.key, false)
-                }
+        getSolidBlocks(name).forEach{
+            val blockData = view.patternData.getRandomBlockData()
+            resetBlock(view.name, it.key, blockData, false)
+            blocksToAdd[it.key] = blockData
+        }
 
-                showView(view.name)
-            }
-        })
+        view.blocksChange.putAll(blocksToAdd)
     }
 
     /**
      * Resets a block in a specific view to their original pattern, updating the viewers.
      * @param name The name of the view to be reset.
      * @param position The position of the view to be reset.
-     * @param update If the block should update to the audience
+     * @param update Whether to update the view on the next tick.
      */
-    fun resetBlock(name: String, position: Position, update: Boolean) {
+    fun resetBlock(name: String, position: Position, blockData: BlockData, update: Boolean) {
         val view: ViewData = views[name]!!
 
-        val randomBlockData = view.patternData.getRandomBlockData()
-        blocks[position] = randomBlockData
-        chunks[getChunkFromPos(position)][name]!![position] = randomBlockData
-        view.blocks[position] = randomBlockData
-
-        if (update) showView(name)
+        chunks[getChunkFromPos(position)][name]!![position] = blockData
+        view.blocks[position] = blockData
+        if (update) view.blocksChange[position] = blockData
     }
 
     /**
@@ -232,7 +233,7 @@ class Stage(
     }
 
     /**
-     * Changes the pattern of all blocks in a specific view and updates the blocks to the audience.
+     * Changes the pattern of all blocks in a specific view and updates the blocks to the audience. (CALL ASYNC)
      * @param name The name of the view to change the pattern of.
      * @param newPatternData The new pattern for the blocks.
      */
@@ -242,21 +243,24 @@ class Stage(
     }
 
     /**
-     * Adds a set of blocks to a specific view, updating the viewers.
+     * Adds a set of blocks to a specific view, updating the viewers. (CALL ASYNC)
      * @param name The name of the view to add blocks to.
      * @param positions The set of positions to be added.
      */
     fun addBlocks(name: String, positions: Set<Position>) {
         val view = views[name]!!
         val chunkBlocks = HashMap<Long, HashMap<Position, BlockData>>()
+        val blocksToAdd = HashMap<Position, BlockData>()
 
         for (position in positions) {
-            if (this.blocks[position] != null) continue
+            if (view.blocks[position] != null) continue
             val blockData = view.patternData.getRandomBlockData()
             chunkBlocks.computeIfAbsent(getChunkFromPos(position)) { HashMap() }[position] = blockData
             view.blocks[position] = blockData
-            this.blocks[position] = blockData
+            blocksToAdd[position] = blockData
         }
+
+        view.blocksChange.putAll(blocksToAdd)
 
         chunkBlocks.forEach { (chunk, data) ->
             if (chunks[chunk] != null) {
@@ -265,29 +269,26 @@ class Stage(
                 chunks[chunk] = hashMapOf(Pair(name, data))
             }
         }
-
-        showView(name)
     }
 
     /**
-     * Sets blocks in a specified view based on the provided positions, pattern, and update flag.
+     * Sets blocks in a specified view based on the provided positions, pattern, and update flag. (CALL ASYNC)
      *
      * @param name The name of the view.
      * @param positions The list of positions where blocks should be set.
      * @param pattern The pattern data used to determine the block data.
      */
     fun setBlocks(name: String, positions: List<Position>, pattern: PatternData) {
-        Bukkit.getScheduler().runTaskAsynchronously(GhostCore.instance, Runnable {
-            run {
-                val view: ViewData = views[name]!!
+        val view: ViewData = views[name]!!
+        val blocksToAdd = HashMap<Position, BlockData>()
 
-                positions.forEach {
-                    setBlock(view.name, it, pattern, false)
-                }
+        positions.forEach {
+            val blockData = pattern.getRandomBlockData()
+            setBlock(view.name, it, blockData, false)
+            blocksToAdd[it] = blockData
+        }
 
-                showView(name)
-            }
-        })
+        view.blocksChange.putAll(blocksToAdd)
     }
 
     /**
@@ -296,7 +297,7 @@ class Stage(
      * @param name The name of the view.
      * @param position The position where the block should be set.
      * @param pattern The pattern data used to determine the block data.
-     * @param update Flag indicating whether to update viewers immediately.
+     * @param update Whether to update the view on the next tick.
      */
     fun setBlock(name: String, position: Position, pattern: PatternData, update: Boolean) {
         val view: ViewData = views[name]!!
@@ -305,43 +306,50 @@ class Stage(
             return
         }
         view.blocks[position] = blockData
+        if (update) view.blocksChange[position] = blockData
         chunks[getChunkFromPos(position)][name]!![position] = blockData
-        blocks[position] = blockData
-        if (!update) return
-        getViewers().forEach { player ->
-            player.sendBlockChange(position.toLocation(world), blockData)
-        }
     }
 
     /**
-     * Removes a set of blocks from a specific view, updating the viewers.
+     * Sets a block in a specified view at the given position based on the provided block data and update flag.
+     *
+     * @param name The name of the view.
+     * @param position The position where the block should be set.
+     * @param blockData The block data used for the block.
+     * @param update Whether to update the view on the next tick.
+     */
+    fun setBlock(name: String, position: Position, blockData: BlockData, update: Boolean) {
+        val view: ViewData = views[name]!!
+        if (!view.blocks.containsKey(position)) {
+            return
+        }
+        view.blocks[position] = blockData
+        if (update) view.blocksChange[position] = blockData
+        chunks[getChunkFromPos(position)][name]!![position] = blockData
+    }
+
+    /**
+     * Removes a set of blocks from a specific view, updating the viewers. (CALL ASYNC)
      * @param name The name of the view to remove blocks from.
      * @param blocks The set of positions of the blocks to be removed.
      */
     fun removeBlocks(name: String, blocks: Set<Position>) {
         val view: ViewData = views[name]!!
         view.blocks.keys.removeAll(blocks)
-        this.blocks.keys.removeAll(blocks)
-
-        getViewers().forEach {
-            it.sendMultiBlockChange(hashMapOf<Position, BlockData>().apply {
-                blocks.forEach { key ->
-                    val chunk = chunks[getChunkFromPos(key)]
-                    if (chunk != null && chunk[name] != null) {
-                        chunk[name]!!.remove(key)
-                        if (chunk[name]!!.isEmpty()) {
-                            chunk.remove(name)
-                        }
-                    }
-                    put(key, world.getBlockData(key.toLocation(world)))
-                }
-            })
+        view.blocksChange.keys.removeAll(blocks)
+        blocks.forEach {
+           val chunk = chunks[getChunkFromPos(it)]
+           if (chunk != null && chunk[name] != null) {
+               chunk[name]!!.remove(it)
+               if (chunk[name]!!.isEmpty()) {
+                   chunk.remove(name)
+               }
+           }
         }
-        showView(name)
     }
 
     /**
-     * Creates a new view with the specified name, blocks, positions, and block pattern.
+     * Creates a new view with the specified name, blocks, positions, and block pattern. (CALL ASYNC)
      * @param name The name of the new view.
      * @param positions The set of positions to be included in the view.
      * @param pattern The block pattern for the blocks in the view.
@@ -357,14 +365,14 @@ class Stage(
             Bukkit.getLogger().severe("View with $name already exists for stage ${this.name}!")
             return null
         }
-        val view = ViewData(name, ConcurrentHashMap(), pattern, isBreakable)
+        val view = ViewData(name, ConcurrentHashMap(), ConcurrentHashMap(), pattern, isBreakable)
         views[name] = view
         addBlocks(name, positions)
         return view
     }
 
     /**
-     * Adds a player to the audience of the stage, updating the player's view.
+     * Adds a player to the audience of the stage, updating the player's view. (CALL ASYNC)
      * @param player The player to be added to the audience.
      */
     fun addPlayer(player: Player) {
@@ -372,17 +380,14 @@ class Stage(
 
         JoinStageEvent(player, audience, this).callEvent()
 
-        Bukkit.getScheduler().runTaskAsynchronously(GhostCore.instance, Runnable {
-            run {
-                for (view in views.keys) {
-                    player.sendMultiBlockChange(getSolidBlocks(view))
-                }
-            }
-        })
+        if (player.world != world) return
+        for (view in views.keys) {
+            player.sendMultiBlockChange(getSolidBlocks(view))
+        }
     }
 
     /**
-     * Removes a player from the audience of the stage, updating the player's view.
+     * Removes a player from the audience of the stage, updating the player's view. (CALL ASYNC)
      * @param player The player to be removed from the audience.
      */
     fun removePlayer(player: Player) {
@@ -390,17 +395,14 @@ class Stage(
 
         LeaveStageEvent(player, audience, this).callEvent()
 
-        Bukkit.getScheduler().runTaskAsynchronously(GhostCore.instance, Runnable {
-            run {
-                for (view in views.keys) {
-                    val blocks = getBlocks(view).toMutableMap()
-                    blocks.keys.forEach { pos ->
-                        blocks[pos] = Material.AIR.createBlockData()
-                    }
-                    player.sendMultiBlockChange(blocks)
-                }
+        for (view in views.keys) {
+            val blocks = getBlocks(view).toMutableMap()
+            blocks.keys.forEach { pos ->
+                blocks[pos] = Material.AIR.createBlockData()
             }
-        })
+            if (player.world != world) return
+            player.sendMultiBlockChange(blocks)
+        }
     }
 
     /**
