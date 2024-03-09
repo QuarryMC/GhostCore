@@ -3,6 +3,7 @@ package me.kooper.ghostcore.commands
 
 import me.kooper.ghostcore.GhostCore
 import me.kooper.ghostcore.gui.StageGUI
+import me.kooper.ghostcore.utils.PositionUtils
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextColor
 import org.bukkit.Bukkit
@@ -10,6 +11,7 @@ import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
+import org.bukkit.util.Vector
 
 class GhostCommand : CommandExecutor {
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>?): Boolean {
@@ -21,6 +23,7 @@ class GhostCommand : CommandExecutor {
             }
             val player: Player = sender
             StageGUI(player)
+            PositionUtils.getLocationsWithin(player.location.add(Vector(15, 0, 15)), player.location.add(Vector(-15, 0, -15)))
         } else {
             if (!sender.hasPermission("ghostcore.mod")) {
                 sender.sendMessage(Component.text("You do not have permission to use this command!").color(TextColor.color(255, 204, 205)))

@@ -22,8 +22,10 @@ class StageListeners : Listener {
             run {
                 for (stage in GhostCore.instance.stageManager.stages.values) {
                     for (view in stage.views) {
-                        stage.sendBlocks(view.value.blocksChange)
-                        view.value.blocksChange.clear()
+                        if (view.value.blocksChange.isNotEmpty()) {
+                            stage.sendBlocks(view.value.blocksChange)
+                            view.value.blocksChange.clear()
+                        }
                     }
                 }
             }

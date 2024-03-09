@@ -23,18 +23,18 @@ class Stage(
     val name: String,
     val audience: ArrayList<UUID>,
     val views: HashMap<String, ViewData>,
-    val chunks: Long2ObjectOpenHashMap<HashMap<String, HashMap<Position, BlockData>>>
+    val chunks: Long2ObjectOpenHashMap<HashMap<String, ConcurrentHashMap<Position, BlockData>>>
 ) {
 
-//    init {        Bukkit.getScheduler().runTaskTimerAsynchronously(GhostCore.instance, Runnable {
-////            run {
-////                views.forEach {
-////                    showView(it.key)
-////                }
-////            }
-////        }, 0L, 600L)
-////
-//    }
+    init {
+        Bukkit.getScheduler().runTaskTimerAsynchronously(GhostCore.instance, Runnable {
+            run {
+                views.forEach {
+                    showView(it.key)
+                }
+            }
+        }, 0L, 600L)
+    }
 
     constructor(world: World, name: String, audience: ArrayList<UUID>) : this(
         world,
@@ -144,11 +144,30 @@ class Stage(
         val blocksToAdd = HashMap<Position, BlockData>()
 
         positions.forEach {
+            if (view.blocks.containsKey(it)) {
+                blocksToAdd[it] = Material.AIR.createBlockData()
+            }
             setAirBlock(name, it, false)
-            blocksToAdd[it] = Material.AIR.createBlockData()
         }
 
         view.blocksChange.putAll(blocksToAdd)
+    }
+
+    /**
+     * Gets the highest altitude from an x-coord and z-coord
+     * @param name The name of the view.
+     * @param x The x-coordinate.
+     * @param z The z-coordinate
+     * @return Returns the highest block at that position.
+     */
+    fun getHighestPosition(name: String, x: Int, z: Int) : Position? {
+        val view: ViewData = views[name]!!
+        for (y in 256 downTo 0) {
+            if (view.blocks[Position.block(x, y, z)] != null && view.blocks[Position.block(x, y, z)]!!.material != Material.AIR) {
+                return Position.block(x, y, z)
+            }
+        }
+        return null
     }
 
     /**
@@ -159,7 +178,7 @@ class Stage(
         val view: ViewData = views[name]!!
         val blocksToAdd = HashMap<Position, BlockData>()
 
-        view.blocks.forEach{
+        view.blocks.forEach {
             val blockData = view.patternData.getRandomBlockData()
             resetBlock(view.name, it.key, blockData, false)
             blocksToAdd[it.key] = blockData
@@ -176,7 +195,7 @@ class Stage(
         val view: ViewData = views[name]!!
         val blocksToAdd = HashMap<Position, BlockData>()
 
-        getSolidBlocks(name).forEach{
+        getSolidBlocks(name).forEach {
             val blockData = view.patternData.getRandomBlockData()
             resetBlock(view.name, it.key, blockData, false)
             blocksToAdd[it.key] = blockData
@@ -206,7 +225,7 @@ class Stage(
      */
     fun getSolidBlocks(name: String): Map<Position, BlockData> {
         val blocks = ConcurrentHashMap(getBlocks(name))
-        blocks.entries.removeIf{ it.value.material == Material.AIR }
+        blocks.entries.removeIf { it.value.material == Material.AIR }
         return blocks
     }
 
@@ -264,9 +283,9 @@ class Stage(
 
         chunkBlocks.forEach { (chunk, data) ->
             if (chunks[chunk] != null) {
-                chunks[chunk][name] = data
+                chunks[chunk][name] = ConcurrentHashMap(data)
             } else {
-                chunks[chunk] = hashMapOf(Pair(name, data))
+                chunks[chunk] = hashMapOf(Pair(name, ConcurrentHashMap(data)))
             }
         }
     }
@@ -335,17 +354,21 @@ class Stage(
      */
     fun removeBlocks(name: String, blocks: Set<Position>) {
         val view: ViewData = views[name]!!
+        val blocksToUpdate = HashMap<Position, BlockData>()
         view.blocks.keys.removeAll(blocks)
-        view.blocksChange.keys.removeAll(blocks)
+
         blocks.forEach {
-           val chunk = chunks[getChunkFromPos(it)]
-           if (chunk != null && chunk[name] != null) {
-               chunk[name]!!.remove(it)
-               if (chunk[name]!!.isEmpty()) {
-                   chunk.remove(name)
-               }
-           }
+            blocksToUpdate[it] = world.getBlockData(it.toLocation(world))
+            val chunk = chunks[getChunkFromPos(it)]
+            if (chunk != null && chunk[name] != null) {
+                chunk[name]!!.remove(it)
+                if (chunk[name]!!.isEmpty()) {
+                    chunk.remove(name)
+                }
+            }
         }
+
+        view.blocksChange.putAll(blocksToUpdate)
     }
 
     /**
@@ -404,6 +427,7 @@ class Stage(
             player.sendMultiBlockChange(blocks)
         }
     }
+
 
     /**
      * Converts a Position object to a corresponding chunk key.
