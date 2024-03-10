@@ -1,9 +1,12 @@
 package me.kooper.ghostcore.models
 
+import io.papermc.paper.math.BlockPosition
 import io.papermc.paper.math.Position
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap
 import me.kooper.ghostcore.GhostCore
+import me.kooper.ghostcore.data.ChunkedViewData
 import me.kooper.ghostcore.data.PatternData
+import me.kooper.ghostcore.data.SimplePosition
 import me.kooper.ghostcore.data.ViewData
 import me.kooper.ghostcore.events.JoinStageEvent
 import me.kooper.ghostcore.events.LeaveStageEvent
@@ -22,8 +25,8 @@ class Stage(
     val world: World,
     val name: String,
     val audience: ArrayList<UUID>,
-    val views: HashMap<String, ViewData>,
-    val chunks: Long2ObjectOpenHashMap<HashMap<String, ConcurrentHashMap<Position, BlockData>>>
+    val views: HashMap<String, ChunkedViewData>,
+    val chunks: HashMap<SimplePosition, ConcurrentHashMap<SimplePosition, BlockData>>
 ) {
 
     init {
@@ -41,7 +44,7 @@ class Stage(
         name,
         audience,
         HashMap(),
-        Long2ObjectOpenHashMap()
+        HashMap()
     )
 
     /**
@@ -68,8 +71,8 @@ class Stage(
      * @param position The position to search for in views.
      * @return The ViewData containing the specified position, or null if not found.
      */
-    fun getViewFromPos(position: Position): ViewData? {
-        return views.values.firstOrNull { it.blocks.containsKey(position) }
+    fun getViewFromPos(position: SimplePosition): ChunkedViewData? {
+        return views.values.firstOrNull { it.hasBlock(position) }
     }
 
     /**
@@ -77,7 +80,8 @@ class Stage(
      * @param name The name of the view to be shown.
      */
     fun showView(name: String) {
-        sendBlocks(views[name]!!.blocks)
+        Bukkit.broadcastMessage("Showing view $name")
+        sendBlocks(views[name]!!.getAllBlocks())
     }
 
     /**
@@ -85,8 +89,9 @@ class Stage(
      * @param name The name of the view to be hidden.
      */
     fun hideView(name: String) {
-        val blocks: ConcurrentHashMap<Position, BlockData> = getBlocks(name)
-        blocks.keys.forEach { pos -> blocks[pos] = Material.AIR.createBlockData() }
+        val blocks: ConcurrentHashMap<SimplePosition, BlockData> = getBlocks(name)
+        val airBlockData = Material.AIR.createBlockData()
+        blocks.keys.forEach { pos -> blocks[pos] = airBlockData }
         sendBlocks(blocks)
     }
 
@@ -98,8 +103,8 @@ class Stage(
      * @return `true` if the position is within the view, `false` otherwise.
      * @throws NoSuchElementException if the specified view name is not found in the 'views' map.
      */
-    fun isWithinView(name: String, position: Position): Boolean {
-        val view: ViewData = views[name]!!
+    fun isWithinView(name: String, position: SimplePosition): Boolean {
+        val view: ChunkedViewData = views[name]!!
         return view.blocks[position] != null
     }
 
@@ -108,18 +113,18 @@ class Stage(
      * @param name The name of the view to be updated.
      * @param chunk The key of the chunk to be updated.
      */
-    fun updateChunkView(name: String, chunk: Long) {
-        sendBlocks(chunks[chunk][name]!!)
+    fun updateChunkView(name: String, chunk: SimplePosition) {
+        sendBlocks(chunks[chunk]!!)
     }
 
     /**
      * Updates blocks by sending a multi block change (RUN ASYNC)
      * @param blocks The blocks to be updated.
      */
-    fun sendBlocks(blocks: Map<Position, BlockData>) {
+    fun sendBlocks(blocks: Map<SimplePosition, BlockData>) {
         for (viewer in getViewers()) {
             if (viewer.world != world) continue
-            viewer.sendMultiBlockChange(blocks)
+            viewer.sendMultiBlockChange(blocks.mapKeys { it.key.toBlockPosition() })
         }
     }
 
@@ -129,8 +134,8 @@ class Stage(
      * @param position The position of the block to be set to air.
      * @param update Whether to update the view on the next tick.
      */
-    fun setAirBlock(name: String, position: Position, update: Boolean) {
-        val view: ViewData = views[name]!!
+    fun setAirBlock(name: String, position: SimplePosition, update: Boolean) {
+        val view: ChunkedViewData = views[name]!!
         setBlock(view.name, position, Material.AIR.createBlockData(), update)
     }
 
@@ -139,13 +144,14 @@ class Stage(
      * @param name The name of the view containing the blocks.
      * @param positions The set of positions of the blocks to be set to air.
      */
-    fun setAirBlocks(name: String, positions: Set<Position>) {
-        val view: ViewData = views[name]!!
-        val blocksToAdd = HashMap<Position, BlockData>()
+    fun setAirBlocks(name: String, positions: Set<SimplePosition>) {
+        val view: ChunkedViewData = views[name]!!
+        val blocksToAdd = HashMap<SimplePosition, BlockData>()
 
+        val airBlockData = Material.AIR.createBlockData()
         positions.forEach {
             if (view.blocks.containsKey(it)) {
-                blocksToAdd[it] = Material.AIR.createBlockData()
+                blocksToAdd[it] = airBlockData
             }
             setAirBlock(name, it, false)
         }
@@ -160,11 +166,12 @@ class Stage(
      * @param z The z-coordinate
      * @return Returns the highest block at that position.
      */
-    fun getHighestPosition(name: String, x: Int, z: Int) : Position? {
-        val view: ViewData = views[name]!!
+    fun getHighestPosition(name: String, x: Int, z: Int) : SimplePosition? {
+        val view: ChunkedViewData = views[name]!!
         for (y in 256 downTo 0) {
-            if (view.blocks[Position.block(x, y, z)] != null && view.blocks[Position.block(x, y, z)]!!.material != Material.AIR) {
-                return Position.block(x, y, z)
+            val block = view.getBlock(SimplePosition.from(x, y, z))
+            if (block != null && block.material != Material.AIR) {
+                return SimplePosition.from(x, y, z)
             }
         }
         return null
@@ -175,10 +182,10 @@ class Stage(
      * @param name The name of the view to be reset.
      */
     fun resetBlocks(name: String) {
-        val view: ViewData = views[name]!!
-        val blocksToAdd = HashMap<Position, BlockData>()
+        val view: ChunkedViewData = views[name]!!
+        val blocksToAdd = HashMap<SimplePosition, BlockData>()
 
-        view.blocks.forEach {
+        view.getAllBlocks().forEach {
             val blockData = view.patternData.getRandomBlockData()
             resetBlock(view.name, it.key, blockData, false)
             blocksToAdd[it.key] = blockData
@@ -192,8 +199,8 @@ class Stage(
      * @param name The name of the view to be reset.
      */
     fun resetSolidBlocks(name: String) {
-        val view: ViewData = views[name]!!
-        val blocksToAdd = HashMap<Position, BlockData>()
+        val view: ChunkedViewData = views[name]!!
+        val blocksToAdd = HashMap<SimplePosition, BlockData>()
 
         getSolidBlocks(name).forEach {
             val blockData = view.patternData.getRandomBlockData()
@@ -210,11 +217,11 @@ class Stage(
      * @param position The position of the view to be reset.
      * @param update Whether to update the view on the next tick.
      */
-    fun resetBlock(name: String, position: Position, blockData: BlockData, update: Boolean) {
-        val view: ViewData = views[name]!!
+    fun resetBlock(name: String, position: SimplePosition, blockData: BlockData, update: Boolean) {
+        val view: ChunkedViewData = views[name]!!
 
-        chunks[getChunkFromPos(position)][name]!![position] = blockData
-        view.blocks[position] = blockData
+        chunks[position.getChunk()]!![position] = blockData
+        view.setBlock(position, blockData)
         if (update) view.blocksChange[position] = blockData
     }
 
@@ -223,7 +230,7 @@ class Stage(
      * @param name The name of the view to get solid blocks from.
      * @return A map of solid blocks in the specified view.
      */
-    fun getSolidBlocks(name: String): Map<Position, BlockData> {
+    fun getSolidBlocks(name: String): Map<SimplePosition, BlockData> {
         val blocks = ConcurrentHashMap(getBlocks(name))
         blocks.entries.removeIf { it.value.material == Material.AIR }
         return blocks
@@ -234,8 +241,8 @@ class Stage(
      * @param name The name of the view to get blocks from.
      * @return A map of all blocks in the specified view.
      */
-    fun getBlocks(name: String): ConcurrentHashMap<Position, BlockData> {
-        return views[name]?.blocks ?: ConcurrentHashMap()
+    fun getBlocks(name: String): ConcurrentHashMap<SimplePosition, BlockData> {
+        return views[name]?.getAllBlocks() ?: ConcurrentHashMap()
     }
 
     /**
@@ -247,8 +254,8 @@ class Stage(
      *
      * @throws NullPointerException if the specified name is not present in the views map.
      */
-    fun getBlock(name: String, position: Position): BlockData? {
-        return views[name]?.blocks?.get(position)
+    fun getBlock(name: String, position: SimplePosition): BlockData? {
+        return views[name]?.getBlock(position)
     }
 
     /**
@@ -266,26 +273,31 @@ class Stage(
      * @param name The name of the view to add blocks to.
      * @param positions The set of positions to be added.
      */
-    fun addBlocks(name: String, positions: Set<Position>) {
+    fun addBlocks(name: String, positions: Set<SimplePosition>) {
         val view = views[name]!!
-        val chunkBlocks = HashMap<Long, HashMap<Position, BlockData>>()
-        val blocksToAdd = HashMap<Position, BlockData>()
+        val chunkBlocks = HashMap<SimplePosition, HashMap<SimplePosition, BlockData>>()
+        val blocksToAdd = HashMap<SimplePosition, BlockData>()
 
         for (position in positions) {
             if (view.blocks[position] != null) continue
             val blockData = view.patternData.getRandomBlockData()
-            chunkBlocks.computeIfAbsent(getChunkFromPos(position)) { HashMap() }[position] = blockData
-            view.blocks[position] = blockData
+            chunkBlocks.computeIfAbsent(position.getChunk()) { HashMap() }[position] = blockData
+            view.setBlock(position, blockData)
             blocksToAdd[position] = blockData
         }
 
         view.blocksChange.putAll(blocksToAdd)
 
         chunkBlocks.forEach { (chunk, data) ->
-            if (chunks[chunk] != null) {
-                chunks[chunk][name] = ConcurrentHashMap(data)
+//            if (chunks[chunk] != null) {
+//                chunks[chunk][name] = ConcurrentHashMap(data)
+//            } else {
+//                chunks[chunk] = hashMapOf(Pair(name, ConcurrentHashMap(data)))
+//            }
+            if (chunks[chunk] == null) {
+                chunks[chunk] = ConcurrentHashMap()
             } else {
-                chunks[chunk] = hashMapOf(Pair(name, ConcurrentHashMap(data)))
+                chunks[chunk]!!
             }
         }
     }
@@ -297,9 +309,9 @@ class Stage(
      * @param positions The list of positions where blocks should be set.
      * @param pattern The pattern data used to determine the block data.
      */
-    fun setBlocks(name: String, positions: List<Position>, pattern: PatternData) {
-        val view: ViewData = views[name]!!
-        val blocksToAdd = HashMap<Position, BlockData>()
+    fun setBlocks(name: String, positions: List<SimplePosition>, pattern: PatternData) {
+        val view: ChunkedViewData = views[name]!!
+        val blocksToAdd = HashMap<SimplePosition, BlockData>()
 
         positions.forEach {
             val blockData = pattern.getRandomBlockData()
@@ -318,15 +330,15 @@ class Stage(
      * @param pattern The pattern data used to determine the block data.
      * @param update Whether to update the view on the next tick.
      */
-    fun setBlock(name: String, position: Position, pattern: PatternData, update: Boolean) {
-        val view: ViewData = views[name]!!
+    fun setBlock(name: String, position: SimplePosition, pattern: PatternData, update: Boolean) {
+        val view: ChunkedViewData = views[name]!!
         val blockData = pattern.getRandomBlockData()
         if (!view.blocks.containsKey(position)) {
             return
         }
-        view.blocks[position] = blockData
+        view.setBlock(position, blockData)
         if (update) view.blocksChange[position] = blockData
-        chunks[getChunkFromPos(position)][name]!![position] = blockData
+        chunks[position.getChunk()]!![position] = blockData
     }
 
     /**
@@ -337,14 +349,14 @@ class Stage(
      * @param blockData The block data used for the block.
      * @param update Whether to update the view on the next tick.
      */
-    fun setBlock(name: String, position: Position, blockData: BlockData, update: Boolean) {
-        val view: ViewData = views[name]!!
+    fun setBlock(name: String, position: SimplePosition, blockData: BlockData, update: Boolean) {
+        val view: ChunkedViewData = views[name]!!
         if (!view.blocks.containsKey(position)) {
             return
         }
-        view.blocks[position] = blockData
+        view.setBlock(position, blockData)
         if (update) view.blocksChange[position] = blockData
-        chunks[getChunkFromPos(position)][name]!![position] = blockData
+        chunks[position.getChunk()]!![position] = blockData
     }
 
     /**
@@ -352,18 +364,18 @@ class Stage(
      * @param name The name of the view to remove blocks from.
      * @param blocks The set of positions of the blocks to be removed.
      */
-    fun removeBlocks(name: String, blocks: Set<Position>) {
-        val view: ViewData = views[name]!!
-        val blocksToUpdate = HashMap<Position, BlockData>()
-        view.blocks.keys.removeAll(blocks)
+    fun removeBlocks(name: String, blocks: Set<SimplePosition>) {
+        val view: ChunkedViewData = views[name]!!
+        val blocksToUpdate = HashMap<SimplePosition, BlockData>()
+        view.removeBlocks(blocks)
 
         blocks.forEach {
             blocksToUpdate[it] = world.getBlockData(it.toLocation(world))
-            val chunk = chunks[getChunkFromPos(it)]
-            if (chunk != null && chunk[name] != null) {
-                chunk[name]!!.remove(it)
-                if (chunk[name]!!.isEmpty()) {
-                    chunk.remove(name)
+            val chunk = chunks[it.getChunk()]
+            if (chunk != null && chunk[it] != null) {
+                chunk.remove(it)
+                if (chunk.isEmpty()) {
+                    chunks.remove(it.getChunk())
                 }
             }
         }
@@ -380,15 +392,15 @@ class Stage(
      */
     fun createView(
         name: String,
-        positions: HashSet<Position>,
+        positions: HashSet<SimplePosition>,
         pattern: PatternData,
         isBreakable: Boolean
-    ): ViewData? {
+    ): ChunkedViewData? {
         if (views.containsKey(name)) {
             Bukkit.getLogger().severe("View with $name already exists for stage ${this.name}!")
             return null
         }
-        val view = ViewData(name, ConcurrentHashMap(), ConcurrentHashMap(), pattern, isBreakable)
+        val view = ChunkedViewData(name, ConcurrentHashMap(), ConcurrentHashMap(), pattern, isBreakable)
         views[name] = view
         addBlocks(name, positions)
         return view
@@ -405,7 +417,7 @@ class Stage(
 
         if (player.world != world) return
         for (view in views.keys) {
-            player.sendMultiBlockChange(getSolidBlocks(view))
+            player.sendMultiBlockChange(getSolidBlocks(view).mapKeys { it.key.toBlockPosition() })
         }
     }
 
@@ -420,11 +432,12 @@ class Stage(
 
         for (view in views.keys) {
             val blocks = getBlocks(view).toMutableMap()
+            val airBlockData = Material.AIR.createBlockData()
             blocks.keys.forEach { pos ->
-                blocks[pos] = Material.AIR.createBlockData()
+                blocks[pos] = airBlockData
             }
             if (player.world != world) return
-            player.sendMultiBlockChange(blocks)
+            player.sendMultiBlockChange(blocks.mapKeys { it.key.toBlockPosition() })
         }
     }
 
@@ -434,8 +447,8 @@ class Stage(
      * @param position The position to get the chunk key from.
      * @return The chunk key corresponding to the given position.
      */
-    fun getChunkFromPos(position: Position): Long {
-        return Chunk.getChunkKey(position.blockX() shr 4, position.blockZ() shr 4)
+    fun getChunkFromPos(position: SimplePosition): Long {
+        return Chunk.getChunkKey(position.x shr 4, position.z shr 4)
     }
 
     /**

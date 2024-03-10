@@ -10,6 +10,8 @@ import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPl
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerChunkData
 import io.papermc.paper.math.Position
 import me.kooper.ghostcore.GhostCore
+import me.kooper.ghostcore.data.ChunkedViewData
+import me.kooper.ghostcore.data.SimplePosition
 import me.kooper.ghostcore.data.ViewData
 import me.kooper.ghostcore.events.GhostBreakEvent
 import me.kooper.ghostcore.events.GhostInteractEvent
@@ -29,7 +31,7 @@ class PacketListener : SimplePacketListenerAbstract() {
         when (event.packetType) {
             PacketType.Play.Client.PLAYER_BLOCK_PLACEMENT -> {
                 val placement = WrapperPlayClientPlayerBlockPlacement(event)
-                val blockPosition = Position.block(
+                val blockPosition = SimplePosition.from(
                     placement.blockPosition.x,
                     placement.blockPosition.y,
                     placement.blockPosition.z
@@ -48,19 +50,27 @@ class PacketListener : SimplePacketListenerAbstract() {
                 val actionType: DiggingAction = digging.action
                 val player: Player = event.player as Player
                 val diggingPosition =
-                    Position.block(digging.blockPosition.x, digging.blockPosition.y, digging.blockPosition.z)
+                    SimplePosition.from(digging.blockPosition.x, digging.blockPosition.y, digging.blockPosition.z)
+//                val block: BlockData = GhostCore.instance.stageManager.getStages(player)
+//                    .asSequence().filter {
+//                        it.getViewFromPos(diggingPosition) != null
+//                    }
+//                    .mapNotNull { stage ->
+//                        stage.getViewFromPos(diggingPosition)!!.blocks[diggingPosition]
+//                    }
+//                    .firstOrNull() ?: return
                 val block: BlockData = GhostCore.instance.stageManager.getStages(player)
                     .asSequence().filter {
                         it.getViewFromPos(diggingPosition) != null
                     }
-                    .mapNotNull { stage ->
-                        stage.getViewFromPos(diggingPosition)!!.blocks[diggingPosition]
+                    .mapNotNull {
+                        it.getViewFromPos(diggingPosition)!!.getBlock(diggingPosition)
                     }
                     .firstOrNull() ?: return
                 val stage: Stage = GhostCore.instance.stageManager.getStages(player).firstOrNull { stage ->
                     stage.getViewFromPos(diggingPosition) != null && stage.world == player.world
                 } ?: return
-                val view: ViewData = stage.getViewFromPos(diggingPosition) ?: return
+                val view: ChunkedViewData = stage.getViewFromPos(diggingPosition) ?: return
 
                 if (actionType == DiggingAction.START_DIGGING) {
                     val interactEvent = GhostInteractEvent(player, diggingPosition, block, view, stage)
@@ -75,7 +85,7 @@ class PacketListener : SimplePacketListenerAbstract() {
                     if (!view.isBreakable) {
                         player.sendBlockChange(
                             diggingPosition.toLocation(stage.world),
-                            view.blocks[diggingPosition]!!.material.createBlockData()
+                            view.getBlock(diggingPosition)!!.material.createBlockData()
                         )
                         return
                     }
@@ -102,12 +112,26 @@ class PacketListener : SimplePacketListenerAbstract() {
             PacketType.Play.Server.CHUNK_DATA -> {
                 val player = event.player as Player
                 val chunkData = WrapperPlayServerChunkData(event)
-                val chunkKey = Chunk.getChunkKey(chunkData.column.x, chunkData.column.z)
+                val world = player.world
+//                val chunkKey = Chunk.getChunkKey(chunkData.column.x, chunkData.column.z)
+//                for (stage in GhostCore.instance.stageManager.getStages(player)) {
+//                    if (stage.world != (event.player as Player).world) return
+//                    if (stage.chunks[chunkKey] == null) continue
+//                    for (chunk in stage.chunks[chunkKey].values) {
+//                        player.sendMultiBlockChange(chunk)
+//                    }
+//                }
+                // New code for ChunkedViewData instead
+                val chunkPositions = mutableSetOf<SimplePosition>()
+                for (y in world.minHeight until world.maxHeight step 16) {
+                    chunkPositions.add(SimplePosition.from(chunkData.column.x, y, chunkData.column.z).getChunk())
+                }
+
                 for (stage in GhostCore.instance.stageManager.getStages(player)) {
-                    if (stage.world != (event.player as Player).world) return
-                    if (stage.chunks[chunkKey] == null) continue
-                    for (chunk in stage.chunks[chunkKey].values) {
-                        player.sendMultiBlockChange(chunk)
+                    if (stage.world != world) return
+                    for (chunkPosition in chunkPositions) {
+                        if (stage.chunks[chunkPosition] == null) continue
+                        player.sendMultiBlockChange(stage.chunks[chunkPosition]!!.mapKeys { it.key.toLocation(world) })
                     }
                 }
             }

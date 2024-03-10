@@ -1,6 +1,8 @@
 package me.kooper.ghostcore.events
 
 import io.papermc.paper.math.Position
+import me.kooper.ghostcore.data.ChunkedViewData
+import me.kooper.ghostcore.data.SimplePosition
 import me.kooper.ghostcore.data.ViewData
 import me.kooper.ghostcore.models.Stage
 import org.bukkit.block.data.BlockData
@@ -12,9 +14,9 @@ import org.bukkit.event.HandlerList
 @Suppress("UnstableApiUsage")
 class GhostInteractEvent(
     val player: Player,
-    val position: Position,
+    val position: SimplePosition,
     val blockData: BlockData,
-    val view: ViewData,
+    val view: ChunkedViewData,
     val stage: Stage
 ) : Event(), Cancellable {
 
