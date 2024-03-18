@@ -67,7 +67,7 @@ class ViewGUI(player: Player, stage: Stage) {
                 ).decoration(TextDecoration.ITALIC, false)
             ),
             {
-                GhostCore.instance.stageManager.toggleSpectate(player, stage)
+                GhostCore.getInstance().stageManager.toggleSpectate(player, stage)
                 gui.updateItem(14, audienceItem.lore(getAudienceLore.invoke()).asGuiItem())
             },
             {
@@ -110,7 +110,7 @@ class ViewGUI(player: Player, stage: Stage) {
         }
 
         gui.setCloseGuiAction {
-            Bukkit.getScheduler().runTaskLater(GhostCore.instance, Runnable { run { StageGUI(player) } }, 1L)
+            Bukkit.getScheduler().runTaskLater(GhostCore.getInstance(), Runnable { run { StageGUI(player) } }, 1L)
         }
 
         gui.open(player)

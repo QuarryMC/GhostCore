@@ -30,7 +30,7 @@ class Stage(
 ) {
 
     init {
-        Bukkit.getScheduler().runTaskTimerAsynchronously(GhostCore.instance, Runnable {
+        Bukkit.getScheduler().runTaskTimerAsynchronously(GhostCore.getInstance(), Runnable {
             run {
                 views.forEach {
                     showView(it.key)

@@ -39,7 +39,7 @@ class GhostCommand : CommandExecutor {
                     sender.sendMessage(Component.text("You can't spectate yourself!").color(TextColor.color(255, 204, 205)))
                     return true
                 }
-                GhostCore.instance.stageManager.toggleSpectate(sender, GhostCore.instance.stageManager.getStages(player)[0])
+                GhostCore.getInstance().stageManager.toggleSpectate(sender, GhostCore.getInstance().stageManager.getStages(player)[0])
                 return true
             }
             if (args[0].equals("zora-test", true)) {

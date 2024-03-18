@@ -41,6 +41,7 @@ class GhostCore : JavaPlugin() {
             }
         } as MutableList<Material>
         instaBreak.filter { it == Material.AIR }.forEach { instaBreak.remove(it) }
+
         stageManager = StageManager()
         PacketEvents.getAPI().eventManager.registerListener(PacketListener())
         PacketEvents.getAPI().init()

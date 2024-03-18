@@ -11,16 +11,16 @@ class StageListeners : Listener {
 
     @EventHandler
     private fun onPlayerQuit(event: PlayerQuitEvent) {
-        if (GhostCore.instance.stageManager.spectatorPrevStages[event.player.uniqueId] != null) {
-            GhostCore.instance.stageManager.spectatorPrevStages.remove(event.player.uniqueId)
+        if (GhostCore.getInstance().stageManager.spectatorPrevStages[event.player.uniqueId] != null) {
+            GhostCore.getInstance().stageManager.spectatorPrevStages.remove(event.player.uniqueId)
         }
     }
 
     @EventHandler
     fun onServerTick(event: ServerTickStartEvent) {
-        Bukkit.getScheduler().runTaskAsynchronously(GhostCore.instance, Runnable {
+        Bukkit.getScheduler().runTaskAsynchronously(GhostCore.getInstance(), Runnable {
             run {
-                for (stage in GhostCore.instance.stageManager.stages.values) {
+                for (stage in GhostCore.getInstance().stageManager.stages.values) {
                     for (view in stage.views) {
                         if (view.value.blocksChange.isNotEmpty()) {
                             stage.sendBlocks(view.value.blocksChange)

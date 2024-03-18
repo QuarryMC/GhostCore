@@ -36,7 +36,7 @@ class StageManager {
     fun createStage(stage: Stage) : Stage? {
         if (stages.containsKey(stage.name)) return null
         stages[stage.name] = stage
-        Bukkit.getScheduler().runTask(GhostCore.instance, Runnable { run { StageCreateEvent(stage).callEvent() } })
+        Bukkit.getScheduler().runTask(GhostCore.getInstance(), Runnable { run { StageCreateEvent(stage).callEvent() } })
         return stage
     }
 
@@ -56,7 +56,7 @@ class StageManager {
      * @param stage The stage to delete.
      */
     fun deleteStage(stage: Stage) {
-        Bukkit.getScheduler().runTask(GhostCore.instance, Runnable { run { DeleteStageEvent(stage).callEvent() } })
+        Bukkit.getScheduler().runTask(GhostCore.getInstance(), Runnable { run { DeleteStageEvent(stage).callEvent() } })
         for (viewer in stage.getViewers()) {
             if (spectators[viewer.uniqueId] != null) {
                 toggleSpectate(viewer, stage)
@@ -86,7 +86,7 @@ class StageManager {
         }
         if (stage.audience.contains(player.uniqueId)) {
             stage.removePlayer(player)
-            Bukkit.getScheduler().runTaskLater(GhostCore.instance, Runnable {
+            Bukkit.getScheduler().runTaskLater(GhostCore.getInstance(), Runnable {
                 spectatorPrevStages[player.uniqueId]?.forEach {
                     it.addPlayer(player)
                 }
@@ -100,7 +100,7 @@ class StageManager {
             spectatorPrevStages[player.uniqueId]?.forEach {
                 it.removePlayer(player)
             }
-            Bukkit.getScheduler().runTaskLater(GhostCore.instance, Runnable {
+            Bukkit.getScheduler().runTaskLater(GhostCore.getInstance(), Runnable {
                 stage.addPlayer(player)
             }, 20L)
             SpectateStageEvent(player, stage, true).callEvent()

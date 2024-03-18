@@ -38,7 +38,7 @@ class PacketListener : SimplePacketListenerAbstract() {
                 )
 
                 val player = event.player as Player
-                val isCancelled = GhostCore.instance.stageManager.getStages(player).filter { it.getViewFromPos(blockPosition) != null }.any { stage ->
+                val isCancelled = GhostCore.getInstance().stageManager.getStages(player).filter { it.getViewFromPos(blockPosition) != null }.any { stage ->
                     stage.getViewFromPos(blockPosition)!!.blocks.containsKey(blockPosition) && stage.world == player.world
                 }
 
@@ -51,7 +51,7 @@ class PacketListener : SimplePacketListenerAbstract() {
                 val player: Player = event.player as Player
                 val diggingPosition =
                     SimplePosition.from(digging.blockPosition.x, digging.blockPosition.y, digging.blockPosition.z)
-//                val block: BlockData = GhostCore.instance.stageManager.getStages(player)
+//                val block: BlockData = GhostCore.getInstance().stageManager.getStages(player)
 //                    .asSequence().filter {
 //                        it.getViewFromPos(diggingPosition) != null
 //                    }
@@ -59,7 +59,7 @@ class PacketListener : SimplePacketListenerAbstract() {
 //                        stage.getViewFromPos(diggingPosition)!!.blocks[diggingPosition]
 //                    }
 //                    .firstOrNull() ?: return
-                val block: BlockData = GhostCore.instance.stageManager.getStages(player)
+                val block: BlockData = GhostCore.getInstance().stageManager.getStages(player)
                     .asSequence().filter {
                         it.getViewFromPos(diggingPosition) != null
                     }
@@ -67,17 +67,17 @@ class PacketListener : SimplePacketListenerAbstract() {
                         it.getViewFromPos(diggingPosition)!!.getBlock(diggingPosition)
                     }
                     .firstOrNull() ?: return
-                val stage: Stage = GhostCore.instance.stageManager.getStages(player).firstOrNull { stage ->
+                val stage: Stage = GhostCore.getInstance().stageManager.getStages(player).firstOrNull { stage ->
                     stage.getViewFromPos(diggingPosition) != null && stage.world == player.world
                 } ?: return
                 val view: ChunkedViewData = stage.getViewFromPos(diggingPosition) ?: return
 
                 if (actionType == DiggingAction.START_DIGGING) {
                     val interactEvent = GhostInteractEvent(player, diggingPosition, block, view, stage)
-                    Bukkit.getScheduler().runTask(GhostCore.instance, Runnable { run { interactEvent.callEvent() } })
+                    Bukkit.getScheduler().runTask(GhostCore.getInstance(), Runnable { run { interactEvent.callEvent() } })
                 }
 
-                if (actionType == DiggingAction.START_DIGGING && (player.gameMode == GameMode.CREATIVE || GhostCore.instance.instaBreak.contains(
+                if (actionType == DiggingAction.START_DIGGING && (player.gameMode == GameMode.CREATIVE || GhostCore.getInstance().instaBreak.contains(
                         block.material
                 ) || (block.getDestroySpeed(player.inventory.itemInMainHand, true) >= block.material.hardness * 30) && !player.isFlying || (block.getDestroySpeed(player.inventory.itemInMainHand, true) >= block.material.hardness * 150) && player.isFlying) ||
                     actionType == DiggingAction.FINISHED_DIGGING
@@ -89,7 +89,7 @@ class PacketListener : SimplePacketListenerAbstract() {
                         )
                         return
                     }
-                    Bukkit.getScheduler().runTask(GhostCore.instance, Runnable {
+                    Bukkit.getScheduler().runTask(GhostCore.getInstance(), Runnable {
                         run {
                             val ghostBreakEvent = GhostBreakEvent(player, diggingPosition, block, view, stage)
                             ghostBreakEvent.callEvent()
@@ -114,7 +114,7 @@ class PacketListener : SimplePacketListenerAbstract() {
                 val chunkData = WrapperPlayServerChunkData(event)
                 val world = player.world
 //                val chunkKey = Chunk.getChunkKey(chunkData.column.x, chunkData.column.z)
-//                for (stage in GhostCore.instance.stageManager.getStages(player)) {
+//                for (stage in GhostCore.getInstance().stageManager.getStages(player)) {
 //                    if (stage.world != (event.player as Player).world) return
 //                    if (stage.chunks[chunkKey] == null) continue
 //                    for (chunk in stage.chunks[chunkKey].values) {
@@ -127,7 +127,7 @@ class PacketListener : SimplePacketListenerAbstract() {
                     chunkPositions.add(SimplePosition.from(chunkData.column.x, y, chunkData.column.z).getChunk())
                 }
 
-                for (stage in GhostCore.instance.stageManager.getStages(player)) {
+                for (stage in GhostCore.getInstance().stageManager.getStages(player)) {
                     if (stage.world != world) return
                     for (chunkPosition in chunkPositions) {
                         if (stage.chunks[chunkPosition] == null) continue

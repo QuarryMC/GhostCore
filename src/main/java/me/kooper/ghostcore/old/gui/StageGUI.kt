@@ -33,7 +33,7 @@ class StageGUI(private val player: Player) {
             ).asGuiItem()
         )
 
-        for ((name, stage) in GhostCore.instance.stageManager.stages) {
+        for ((name, stage) in GhostCore.getInstance().stageManager.stages) {
             val material = if (stage.audience.size == 0) Material.BARRIER else Material.NOTE_BLOCK
             gui.addItem(
                 ItemBuilder.from(material).name(
