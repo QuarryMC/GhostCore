@@ -1,4 +1,4 @@
-package me.kooper.ghostcore.listeners
+package me.kooper.ghostcore.old.listeners
 
 import com.destroystokyo.paper.event.server.ServerTickStartEvent
 import me.kooper.ghostcore.GhostCore

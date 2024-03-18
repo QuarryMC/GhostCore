@@ -1,10 +1,10 @@
-package me.kooper.ghostcore.managers
+package me.kooper.ghostcore.old.managers
 
 import me.kooper.ghostcore.GhostCore
-import me.kooper.ghostcore.events.DeleteStageEvent
-import me.kooper.ghostcore.events.SpectateStageEvent
-import me.kooper.ghostcore.events.StageCreateEvent
-import me.kooper.ghostcore.models.Stage
+import me.kooper.ghostcore.old.events.DeleteStageEvent
+import me.kooper.ghostcore.old.events.SpectateStageEvent
+import me.kooper.ghostcore.old.events.StageCreateEvent
+import me.kooper.ghostcore.old.models.Stage
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextColor
 import org.bukkit.Bukkit

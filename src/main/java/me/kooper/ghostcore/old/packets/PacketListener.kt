@@ -1,4 +1,4 @@
-package me.kooper.ghostcore.packets
+package me.kooper.ghostcore.old.packets
 
 import com.github.retrooper.packetevents.event.SimplePacketListenerAbstract
 import com.github.retrooper.packetevents.event.simple.PacketPlayReceiveEvent
@@ -10,12 +10,12 @@ import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPl
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerChunkData
 import io.papermc.paper.math.Position
 import me.kooper.ghostcore.GhostCore
-import me.kooper.ghostcore.data.ChunkedViewData
-import me.kooper.ghostcore.data.SimplePosition
-import me.kooper.ghostcore.data.ViewData
-import me.kooper.ghostcore.events.GhostBreakEvent
-import me.kooper.ghostcore.events.GhostInteractEvent
-import me.kooper.ghostcore.models.Stage
+import me.kooper.ghostcore.old.data.ChunkedViewData
+import me.kooper.ghostcore.old.data.SimplePosition
+import me.kooper.ghostcore.old.data.ViewData
+import me.kooper.ghostcore.old.events.GhostBreakEvent
+import me.kooper.ghostcore.old.events.GhostInteractEvent
+import me.kooper.ghostcore.old.models.Stage
 import org.bukkit.Bukkit
 import org.bukkit.Chunk
 import org.bukkit.GameMode

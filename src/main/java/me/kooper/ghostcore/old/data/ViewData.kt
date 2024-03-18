@@ -1,4 +1,4 @@
-package me.kooper.ghostcore.data
+package me.kooper.ghostcore.old.data
 
 import io.papermc.paper.math.BlockPosition
 import io.papermc.paper.math.Position

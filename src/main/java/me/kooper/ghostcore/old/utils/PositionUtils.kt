@@ -1,4 +1,4 @@
-package me.kooper.ghostcore.utils
+package me.kooper.ghostcore.old.utils
 
 import PositionIterator
 import io.papermc.paper.math.Position

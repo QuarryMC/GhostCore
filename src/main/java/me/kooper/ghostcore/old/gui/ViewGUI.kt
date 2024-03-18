@@ -1,11 +1,11 @@
-package me.kooper.ghostcore.gui
+package me.kooper.ghostcore.old.gui
 
 import dev.triumphteam.gui.builder.item.ItemBuilder
 import dev.triumphteam.gui.guis.Gui
 import dev.triumphteam.gui.guis.GuiItem
 import dev.triumphteam.gui.guis.PaginatedGui
 import me.kooper.ghostcore.GhostCore
-import me.kooper.ghostcore.models.Stage
+import me.kooper.ghostcore.old.models.Stage
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration

@@ -1,5 +1,6 @@
-package me.kooper.ghostcore.data
+package me.kooper.ghostcore.old.data
 
+import org.bukkit.Bukkit
 import org.bukkit.block.data.BlockData
 import java.util.concurrent.ConcurrentHashMap
 
@@ -28,7 +29,7 @@ data class ChunkedViewData(
     }
 
     fun setBlock(position: SimplePosition, blockData: BlockData) {
-        getChunkData(position)[position] = blockData
+        blocks[getChunkPos(position)]?.put(position, blockData)
     }
 
     fun removeBlock(position: SimplePosition) {

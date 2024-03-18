@@ -1,15 +1,15 @@
-package me.kooper.ghostcore.models
+package me.kooper.ghostcore.old.models
 
 import io.papermc.paper.math.BlockPosition
 import io.papermc.paper.math.Position
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap
 import me.kooper.ghostcore.GhostCore
-import me.kooper.ghostcore.data.ChunkedViewData
-import me.kooper.ghostcore.data.PatternData
-import me.kooper.ghostcore.data.SimplePosition
-import me.kooper.ghostcore.data.ViewData
-import me.kooper.ghostcore.events.JoinStageEvent
-import me.kooper.ghostcore.events.LeaveStageEvent
+import me.kooper.ghostcore.old.data.ChunkedViewData
+import me.kooper.ghostcore.old.data.PatternData
+import me.kooper.ghostcore.old.data.SimplePosition
+import me.kooper.ghostcore.old.data.ViewData
+import me.kooper.ghostcore.old.events.JoinStageEvent
+import me.kooper.ghostcore.old.events.LeaveStageEvent
 import org.bukkit.Bukkit
 import org.bukkit.Chunk
 import org.bukkit.Material
@@ -124,6 +124,7 @@ class Stage(
     fun sendBlocks(blocks: Map<SimplePosition, BlockData>) {
         for (viewer in getViewers()) {
             if (viewer.world != world) continue
+            viewer.sendMessage("Sending blocks to ${viewer.name} in world ${viewer.world.name} with ${blocks.size} blocks.")
             viewer.sendMultiBlockChange(blocks.mapKeys { it.key.toBlockPosition() })
         }
     }

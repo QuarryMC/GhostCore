@@ -1,10 +1,10 @@
-package me.kooper.ghostcore.events
+package me.kooper.ghostcore.old.events
 
 import io.papermc.paper.math.Position
-import me.kooper.ghostcore.data.ChunkedViewData
-import me.kooper.ghostcore.data.SimplePosition
-import me.kooper.ghostcore.data.ViewData
-import me.kooper.ghostcore.models.Stage
+import me.kooper.ghostcore.old.data.ChunkedViewData
+import me.kooper.ghostcore.old.data.SimplePosition
+import me.kooper.ghostcore.old.data.ViewData
+import me.kooper.ghostcore.old.models.Stage
 import org.bukkit.block.data.BlockData
 import org.bukkit.entity.Player
 import org.bukkit.event.Cancellable
@@ -12,7 +12,7 @@ import org.bukkit.event.Event
 import org.bukkit.event.HandlerList
 
 @Suppress("UnstableApiUsage")
-class GhostInteractEvent(
+class GhostBreakEvent(
     val player: Player,
     val position: SimplePosition,
     val blockData: BlockData,

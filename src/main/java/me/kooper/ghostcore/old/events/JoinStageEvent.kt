@@ -1,6 +1,6 @@
-package me.kooper.ghostcore.events
+package me.kooper.ghostcore.old.events
 
-import me.kooper.ghostcore.models.Stage
+import me.kooper.ghostcore.old.models.Stage
 import org.bukkit.entity.Player
 import org.bukkit.event.Event
 import org.bukkit.event.HandlerList
