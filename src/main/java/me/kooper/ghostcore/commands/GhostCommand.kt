@@ -1,9 +1,9 @@
 
-package me.kooper.ghostcore.old.commands
+package me.kooper.ghostcore.commands
 
 import me.kooper.ghostcore.GhostCore
-import me.kooper.ghostcore.old.gui.StageGUI
-import me.kooper.ghostcore.old.utils.PositionUtils
+import me.kooper.ghostcore.gui.StageGUI
+import me.kooper.ghostcore.utils.PositionUtils
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextColor
 import org.bukkit.Bukkit

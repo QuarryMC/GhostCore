@@ -1,4 +1,4 @@
-package me.kooper.ghostcore.old.gui
+package me.kooper.ghostcore.gui
 
 import dev.triumphteam.gui.builder.item.ItemBuilder
 import dev.triumphteam.gui.guis.Gui

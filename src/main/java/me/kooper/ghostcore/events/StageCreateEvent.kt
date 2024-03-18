@@ -1,17 +1,18 @@
-package me.kooper.ghostcore.old.events
+package me.kooper.ghostcore.events
 
 import me.kooper.ghostcore.old.models.Stage
 import org.bukkit.event.Event
 import org.bukkit.event.HandlerList
 
-class DeleteStageEvent(val stage: Stage) : Event() {
+class StageCreateEvent(val stage: Stage) : Event() {
 
     companion object {
         private val HANDLERS = HandlerList()
+
         @JvmStatic
         private fun getHandlerList(): HandlerList = HANDLERS
     }
 
-    override fun getHandlers(): HandlerList = DeleteStageEvent.HANDLERS
+    override fun getHandlers(): HandlerList = StageCreateEvent.HANDLERS
 
 }

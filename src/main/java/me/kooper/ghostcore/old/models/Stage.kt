@@ -1,15 +1,12 @@
 package me.kooper.ghostcore.old.models
 
-import io.papermc.paper.math.BlockPosition
 import io.papermc.paper.math.Position
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap
 import me.kooper.ghostcore.GhostCore
 import me.kooper.ghostcore.old.data.ChunkedViewData
 import me.kooper.ghostcore.old.data.PatternData
 import me.kooper.ghostcore.old.data.SimplePosition
-import me.kooper.ghostcore.old.data.ViewData
-import me.kooper.ghostcore.old.events.JoinStageEvent
-import me.kooper.ghostcore.old.events.LeaveStageEvent
+import me.kooper.ghostcore.events.JoinStageEvent
+import me.kooper.ghostcore.events.LeaveStageEvent
 import org.bukkit.Bukkit
 import org.bukkit.Chunk
 import org.bukkit.Material

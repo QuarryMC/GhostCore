@@ -1,9 +1,7 @@
-package me.kooper.ghostcore.old.events
+package me.kooper.ghostcore.events
 
-import io.papermc.paper.math.Position
 import me.kooper.ghostcore.old.data.ChunkedViewData
 import me.kooper.ghostcore.old.data.SimplePosition
-import me.kooper.ghostcore.old.data.ViewData
 import me.kooper.ghostcore.old.models.Stage
 import org.bukkit.block.data.BlockData
 import org.bukkit.entity.Player

@@ -1,12 +1,10 @@
-package me.kooper.ghostcore.old.events
+package me.kooper.ghostcore.events
 
 import me.kooper.ghostcore.old.models.Stage
-import org.bukkit.entity.Player
 import org.bukkit.event.Event
 import org.bukkit.event.HandlerList
-import java.util.*
 
-class LeaveStageEvent(val player: Player, val audience: ArrayList<UUID>, val stage: Stage) : Event() {
+class DeleteStageEvent(val stage: Stage) : Event() {
 
     companion object {
         private val HANDLERS = HandlerList()
@@ -14,6 +12,6 @@ class LeaveStageEvent(val player: Player, val audience: ArrayList<UUID>, val sta
         private fun getHandlerList(): HandlerList = HANDLERS
     }
 
-    override fun getHandlers(): HandlerList = LeaveStageEvent.HANDLERS
+    override fun getHandlers(): HandlerList = DeleteStageEvent.HANDLERS
 
 }

@@ -1,4 +1,4 @@
-package me.kooper.ghostcore.old.events
+package me.kooper.ghostcore.events
 
 import me.kooper.ghostcore.old.models.Stage
 import org.bukkit.entity.Player
