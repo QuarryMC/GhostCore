@@ -9,9 +9,10 @@ import java.util.*
 class JoinStageEvent(val player: Player, val audience: ArrayList<UUID>, val stage: Stage) : Event() {
     companion object {
         private val HANDLERS = HandlerList()
+
         @JvmStatic
         private fun getHandlerList(): HandlerList = HANDLERS
     }
 
-    override fun getHandlers(): HandlerList = JoinStageEvent.HANDLERS
+    override fun getHandlers(): HandlerList = HANDLERS
 }

@@ -22,6 +22,7 @@ class GhostInteractEvent(
 
     companion object {
         val HANDLERS = HandlerList()
+
         @JvmStatic
         private fun getHandlerList(): HandlerList = HANDLERS
     }

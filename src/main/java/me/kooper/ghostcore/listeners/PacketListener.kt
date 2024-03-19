@@ -33,7 +33,8 @@ class PacketListener : SimplePacketListenerAbstract() {
                 )
 
                 val player = event.player as Player
-                val isCancelled = GhostCore.getInstance().stageManager.getStages(player).filter { it.getViewFromPos(blockPosition) != null }.any { stage ->
+                val isCancelled = GhostCore.getInstance().stageManager.getStages(player)
+                    .filter { it.getViewFromPos(blockPosition) != null }.any { stage ->
                     stage.getViewFromPos(blockPosition)!!.hasBlock(blockPosition) && stage.world == player.world
                 }
 
@@ -45,7 +46,8 @@ class PacketListener : SimplePacketListenerAbstract() {
                 val actionType = digging.action
 
                 val player = event.player as Player
-                val diggingPosition = SimplePosition.from(digging.blockPosition.x, digging.blockPosition.y, digging.blockPosition.z)
+                val diggingPosition =
+                    SimplePosition.from(digging.blockPosition.x, digging.blockPosition.y, digging.blockPosition.z)
 
                 val block = GhostCore.getInstance().stageManager.getStages(player)
                     .asSequence().filter {
@@ -73,7 +75,14 @@ class PacketListener : SimplePacketListenerAbstract() {
                         if (
                             player.gameMode == GameMode.CREATIVE ||
                             GhostCore.getInstance().instaBreak.contains(block.getBlockData().material) ||
-                            ((block.getBlockData().getDestroySpeed(player.inventory.itemInMainHand, true) >= block.getBlockData().material.hardness * 30) && !player.isFlying || (block.getBlockData().getDestroySpeed(player.inventory.itemInMainHand, true) >= block.getBlockData().material.hardness * 150) && player.isFlying)
+                            ((block.getBlockData().getDestroySpeed(
+                                player.inventory.itemInMainHand,
+                                true
+                            ) >= block.getBlockData().material.hardness * 30) && !player.isFlying || (block.getBlockData()
+                                .getDestroySpeed(
+                                    player.inventory.itemInMainHand,
+                                    true
+                                ) >= block.getBlockData().material.hardness * 150) && player.isFlying)
                         ) {
                             if (!view.isBreakable()) {
                                 player.sendBlockChange(diggingPosition.toLocation(stage.world), block.getBlockData())
@@ -81,16 +90,21 @@ class PacketListener : SimplePacketListenerAbstract() {
                             }
                             Bukkit.getScheduler().runTask(GhostCore.getInstance(), Runnable {
                                 run {
-                                    val ghostBreakEvent = GhostBreakEvent(player, diggingPosition, block.getBlockData(), view, stage)
+                                    val ghostBreakEvent =
+                                        GhostBreakEvent(player, diggingPosition, block.getBlockData(), view, stage)
                                     ghostBreakEvent.callEvent()
                                     if (!ghostBreakEvent.isCancelled) {
-                                        player.sendBlockChange(diggingPosition.toLocation(stage.world), block.getBlockData())
+                                        player.sendBlockChange(
+                                            diggingPosition.toLocation(stage.world),
+                                            block.getBlockData()
+                                        )
                                         view.setBlock(diggingPosition, block)
                                     }
                                 }
                             })
                         }
                     }
+
                     else -> {}
                 }
             }
@@ -110,7 +124,8 @@ class PacketListener : SimplePacketListenerAbstract() {
                 val world = player.world
                 val chunkX = chunkData.column.x
                 val chunkZ = chunkData.column.z
-                val stage = GhostCore.getInstance().stageManager.getStages(player).firstOrNull { it.world == world } ?: return
+                val stage =
+                    GhostCore.getInstance().stageManager.getStages(player).firstOrNull { it.world == world } ?: return
 
                 val chunkPositions = mutableSetOf<SimplePosition>()
                 for (y in world.minHeight until world.maxHeight step 16) {
@@ -124,7 +139,8 @@ class PacketListener : SimplePacketListenerAbstract() {
                 chunkedViews.forEach { view ->
                     val chunkBlocks = view.getBlocksInChunk(SimplePosition(chunkX, 0, chunkZ))
                     if (chunkBlocks.isNotEmpty()) {
-                        player.sendMultiBlockChange(chunkBlocks.mapValues { it.value.getBlockData() }.mapKeys { it.key.toBlockPosition() })
+                        player.sendMultiBlockChange(chunkBlocks.mapValues { it.value.getBlockData() }
+                            .mapKeys { it.key.toBlockPosition() })
                     }
                 }
             }

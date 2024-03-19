@@ -10,7 +10,8 @@ import org.bukkit.entity.Player
 class BlockUtils {
     companion object {
         fun showBlocks(player: Player, blocks: Map<SimplePosition, GhostBlockData>) {
-            val blocksToSend: Map<Position, BlockData> = blocks.mapKeys { it.key.toBlockPosition() }.mapValues { it.value.block }
+            val blocksToSend: Map<Position, BlockData> =
+                blocks.mapKeys { it.key.toBlockPosition() }.mapValues { it.value.block }
             player.sendMultiBlockChange(blocksToSend)
         }
 

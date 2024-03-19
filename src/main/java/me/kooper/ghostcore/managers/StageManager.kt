@@ -23,7 +23,7 @@ class StageManager {
      * @param player The player for which to retrieve stages.
      * @return A list of stages that the player is currently viewing.
      */
-    fun getStages(player: Player) : List<Stage> {
+    fun getStages(player: Player): List<Stage> {
         return stages.values.filter { it.audience.contains(player.uniqueId) }
     }
 
@@ -33,7 +33,7 @@ class StageManager {
      * @param stage The stage object to create and cache.
      * @return The created stage
      */
-    fun createStage(stage: Stage) : Stage? {
+    fun createStage(stage: Stage): Stage? {
         if (stages.containsKey(stage.name)) return null
         stages[stage.name] = stage
         Bukkit.getScheduler().runTask(GhostCore.getInstance(), Runnable { run { StageCreateEvent(stage).callEvent() } })
@@ -60,7 +60,9 @@ class StageManager {
         for (viewer in stage.getViewers()) {
             if (spectators[viewer.uniqueId] != null) {
                 toggleSpectate(viewer, stage)
-                viewer.sendMessage(Component.text("The player you were spectating has left.").color(TextColor.color(233, 233, 233)))
+                viewer.sendMessage(
+                    Component.text("The player you were spectating has left.").color(TextColor.color(233, 233, 233))
+                )
             }
             stage.removePlayer(viewer)
         }
@@ -73,7 +75,7 @@ class StageManager {
      * @param name The name of the stage to retrieve.
      * @return The stage object with the given name, or null if it doesn't exist.
      */
-    fun getStage(name: String) : Stage? {
+    fun getStage(name: String): Stage? {
         return stages[name]
     }
 

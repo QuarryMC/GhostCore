@@ -16,7 +16,7 @@ data class ChunkedView(
      * ConcurrentHashMap<Chunk Position, ConcurrentHashMap<Block Position, Block Data>>
      */
     val blocks: ConcurrentHashMap<SimplePosition, ConcurrentHashMap<SimplePosition, GhostBlockData>> = ConcurrentHashMap()
-): View {
+) : View {
 
     /**
      * Used to track recently changed blocks, this will be sent to players and cleared on an interval.
@@ -88,7 +88,8 @@ data class ChunkedView(
 
     override fun hasBlock(position: SimplePosition): Boolean {
         if (!bound.contains(position.toVector())) return false
-        return changedBlocks.contains(position) || blocks.getOrDefault(position.getChunk(), ConcurrentHashMap()).containsKey(position)
+        return changedBlocks.contains(position) || blocks.getOrDefault(position.getChunk(), ConcurrentHashMap())
+            .containsKey(position)
     }
 
 }

@@ -10,10 +10,11 @@ class LeaveStageEvent(val player: Player, val audience: ArrayList<UUID>, val sta
 
     companion object {
         private val HANDLERS = HandlerList()
+
         @JvmStatic
         private fun getHandlerList(): HandlerList = HANDLERS
     }
 
-    override fun getHandlers(): HandlerList = LeaveStageEvent.HANDLERS
+    override fun getHandlers(): HandlerList = HANDLERS
 
 }

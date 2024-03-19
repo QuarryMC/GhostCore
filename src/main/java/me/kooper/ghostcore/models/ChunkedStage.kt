@@ -20,7 +20,7 @@ class ChunkedStage(
     override val audience: ArrayList<UUID>,
     override val views: HashMap<String, View>,
     override val chunks: HashMap<SimplePosition, ConcurrentHashMap<SimplePosition, GhostBlockData>>
-): Stage(world, name, audience, views, chunks) {
+) : Stage(world, name, audience, views, chunks) {
     override fun deleteView(name: String) {
         hideView(name)
         views.remove(name)
@@ -110,7 +110,8 @@ class ChunkedStage(
     }
 
     override fun getSolidBlocks(name: String): Map<SimplePosition, GhostBlockData> {
-        return (views as HashMap<String, ChunkedView>)[name]?.getAllBlocksInBound()?.filter {it.value.getBlockData().material.isSolid} ?: emptyMap()
+        return (views as HashMap<String, ChunkedView>)[name]?.getAllBlocksInBound()
+            ?.filter { it.value.getBlockData().material.isSolid } ?: emptyMap()
     }
 
     override fun getBlocks(name: String): ConcurrentHashMap<SimplePosition, GhostBlockData> {
@@ -170,7 +171,9 @@ class ChunkedStage(
 
         if (player.world != world) return
         for (view in views.keys) {
-            player.sendMultiBlockChange((views as HashMap<String, ChunkedView>)[view]?.getAllBlocks()?.mapValues { it.value.getBlockData() }?.mapKeys { it.key.toBlockPosition() } ?: emptyMap())
+            player.sendMultiBlockChange(
+                (views as HashMap<String, ChunkedView>)[view]?.getAllBlocks()?.mapValues { it.value.getBlockData() }
+                    ?.mapKeys { it.key.toBlockPosition() } ?: emptyMap())
         }
     }
 
@@ -183,7 +186,8 @@ class ChunkedStage(
             val blocks = getBlocks(view).toMutableMap()
             val airBlock = GhostBlockData(Material.AIR.createBlockData())
             blocks.forEach { (position, _) -> blocks[position] = airBlock }
-            player.sendMultiBlockChange(blocks.mapValues { it.value.getBlockData() }.mapKeys { it.key.toBlockPosition() })
+            player.sendMultiBlockChange(blocks.mapValues { it.value.getBlockData() }
+                .mapKeys { it.key.toBlockPosition() })
         }
     }
 

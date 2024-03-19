@@ -67,7 +67,13 @@ abstract class Stage(
      * @param isBreakable Whether blocks in the view can be broken.
      * @return The newly created `View` object, or `null` if a view with the same name already exists.
      */
-    abstract fun createView(name: String, minPosition: SimplePosition, maxPosition: SimplePosition, pattern: PatternData, isBreakable: Boolean): View?
+    abstract fun createView(
+        name: String,
+        minPosition: SimplePosition,
+        maxPosition: SimplePosition,
+        pattern: PatternData,
+        isBreakable: Boolean
+    ): View?
 
     // **** Block Manipulation Functions ****
 
