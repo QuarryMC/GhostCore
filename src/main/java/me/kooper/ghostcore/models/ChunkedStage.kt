@@ -1,21 +1,17 @@
 package me.kooper.ghostcore.models
 
-import io.papermc.paper.math.Position
 import me.kooper.ghostcore.events.JoinStageEvent
 import me.kooper.ghostcore.events.LeaveStageEvent
 import me.kooper.ghostcore.utils.PatternData
 import me.kooper.ghostcore.utils.types.GhostBlockData
 import me.kooper.ghostcore.utils.types.SimplePosition
 import org.bukkit.Bukkit
-import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.World
-import org.bukkit.block.data.BlockData
 import org.bukkit.entity.Player
 import org.bukkit.util.BoundingBox
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.collections.HashMap
 
 @Suppress("UNCHECKED_CAST", "UnstableApiUsage")
 class ChunkedStage(
