@@ -10,10 +10,10 @@ import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPl
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerChunkData
 import me.kooper.ghostcore.GhostCore
 import me.kooper.ghostcore.old.data.ChunkedViewData
-import me.kooper.ghostcore.utils.SimplePosition
+import me.kooper.ghostcore.utils.types.SimplePosition
 import me.kooper.ghostcore.events.GhostBreakEvent
 import me.kooper.ghostcore.events.GhostInteractEvent
-import me.kooper.ghostcore.old.models.Stage
+import me.kooper.ghostcore.models.Stage
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.Material

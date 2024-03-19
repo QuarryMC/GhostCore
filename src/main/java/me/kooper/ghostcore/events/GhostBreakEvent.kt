@@ -1,20 +1,20 @@
 package me.kooper.ghostcore.events
 
-import me.kooper.ghostcore.old.data.ChunkedViewData
-import me.kooper.ghostcore.utils.SimplePosition
-import me.kooper.ghostcore.old.models.Stage
+import me.kooper.ghostcore.models.Stage
+import me.kooper.ghostcore.utils.types.SimplePosition
 import org.bukkit.block.data.BlockData
 import org.bukkit.entity.Player
 import org.bukkit.event.Cancellable
 import org.bukkit.event.Event
 import org.bukkit.event.HandlerList
+import javax.swing.text.View
 
 @Suppress("UnstableApiUsage")
 class GhostBreakEvent(
     val player: Player,
     val position: SimplePosition,
     val blockData: BlockData,
-    val view: ChunkedViewData,
+    val view: View,
     val stage: Stage
 ) : Event(), Cancellable {
 

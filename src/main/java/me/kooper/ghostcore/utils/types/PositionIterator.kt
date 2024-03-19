@@ -1,3 +1,5 @@
+package me.kooper.ghostcore.utils.types
+
 import io.papermc.paper.math.Position
 import kotlin.math.abs
 import kotlin.math.min

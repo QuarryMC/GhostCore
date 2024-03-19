@@ -4,7 +4,7 @@ import io.papermc.paper.math.Position
 import me.kooper.ghostcore.GhostCore
 import me.kooper.ghostcore.old.data.ChunkedViewData
 import me.kooper.ghostcore.old.data.PatternData
-import me.kooper.ghostcore.utils.SimplePosition
+import me.kooper.ghostcore.utils.types.SimplePosition
 import me.kooper.ghostcore.events.JoinStageEvent
 import me.kooper.ghostcore.events.LeaveStageEvent
 import org.bukkit.Bukkit

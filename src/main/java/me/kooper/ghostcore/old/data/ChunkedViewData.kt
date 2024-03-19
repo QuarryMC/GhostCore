@@ -1,6 +1,6 @@
 package me.kooper.ghostcore.old.data
 
-import me.kooper.ghostcore.utils.SimplePosition
+import me.kooper.ghostcore.utils.types.SimplePosition
 import org.bukkit.block.data.BlockData
 import java.util.concurrent.ConcurrentHashMap
 

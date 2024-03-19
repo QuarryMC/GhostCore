@@ -1,9 +1,10 @@
-package me.kooper.ghostcore.utils
+package me.kooper.ghostcore.utils.types
 
 import io.papermc.paper.math.BlockPosition
 import io.papermc.paper.math.Position
 import org.bukkit.Location
 import org.bukkit.World
+import org.bukkit.util.Vector
 
 class SimplePosition(var x: Int, var y: Int, var z: Int) {
     constructor(x: Number, y: Number, z: Number) : this(x.toInt(), y.toInt(), z.toInt())
@@ -37,10 +38,18 @@ class SimplePosition(var x: Int, var y: Int, var z: Int) {
         return Location(world, x.toDouble(), y.toDouble(), z.toDouble())
     }
 
+    fun toVector(): Vector {
+        return Vector(x.toDouble(), y.toDouble(), z.toDouble())
+    }
+
     companion object {
         fun from(x: Int, y: Int, z: Int): SimplePosition {
             return SimplePosition(x, y, z)
         }
     }
 
+}
+
+fun Vector.toSimplePosition(): SimplePosition {
+    return SimplePosition(x, y, z)
 }
