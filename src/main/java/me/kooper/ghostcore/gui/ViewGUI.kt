@@ -5,6 +5,7 @@ import dev.triumphteam.gui.guis.Gui
 import dev.triumphteam.gui.guis.GuiItem
 import dev.triumphteam.gui.guis.PaginatedGui
 import me.kooper.ghostcore.GhostCore
+import me.kooper.ghostcore.models.ChunkedView
 import me.kooper.ghostcore.models.Stage
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextColor
@@ -87,17 +88,17 @@ class ViewGUI(player: Player, stage: Stage) {
                     ).decoration(TextDecoration.ITALIC, false)
                 ),
                 {
-                    view.isBreakable = !view.isBreakable
+                    view.setBreakable(!view.isBreakable())
                 },
                 {
                     var viewLore: ArrayList<Component> = arrayListOf(
                         Component.text(""),
-                        Component.text("Blocks: ${view.blocks.size}"),
-                        Component.text("Breakable: ${view.isBreakable}"),
+                        Component.text("Blocks: ${view.getAllBlocks().size}"),
+                        Component.text("Breakable: ${view.isBreakable()}"),
                         Component.text(""),
                         Component.text("Pattern:")
                     )
-                    for ((data, chance) in view.patternData.blockDataPercentages) {
+                    for ((data, chance) in (view as ChunkedView).patternData.blockDataPercentages) {
                         viewLore.add(Component.text(" ➥ ${data.material.name}: ${chance}%"))
                     }
                     viewLore.addAll(listOf(Component.text(""), Component.text("Click to toggle breakability")))

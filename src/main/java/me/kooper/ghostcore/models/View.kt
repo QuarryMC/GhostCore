@@ -5,6 +5,8 @@ import me.kooper.ghostcore.utils.types.SimplePosition
 
 interface View {
 
+    fun isBreakable(): Boolean = false
+    fun setBreakable(breakable: Boolean) {}
     fun getAllBlocks(): Map<SimplePosition, GhostBlockData>
     fun getBlock(position: SimplePosition): GhostBlockData?
     fun setBlock(position: SimplePosition, blockData: GhostBlockData)

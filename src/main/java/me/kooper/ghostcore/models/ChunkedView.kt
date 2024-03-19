@@ -23,6 +23,14 @@ data class ChunkedView(
      */
     val changedBlocks: ConcurrentHashMap<SimplePosition, GhostBlockData> = ConcurrentHashMap()
 
+    override fun isBreakable(): Boolean {
+        return isBreakable;
+    }
+
+    override fun setBreakable(breakable: Boolean) {
+        isBreakable = breakable
+    }
+
     fun getBlocksInChunk(chunkPosition: SimplePosition): ConcurrentHashMap<SimplePosition, GhostBlockData> {
         return blocks.getOrDefault(chunkPosition, ConcurrentHashMap())
     }
