@@ -82,7 +82,7 @@ class PacketListener : SimplePacketListenerAbstract() {
                             Bukkit.getScheduler().runTask(GhostCore.getInstance(), Runnable {
                                 run {
                                     val ghostBreakEvent = GhostBreakEvent(player, diggingPosition, block.getBlockData(), view, stage)
-                                    ghostBreakEvent.callEventSync()
+                                    ghostBreakEvent.callEvent()
                                     if (!ghostBreakEvent.isCancelled) {
                                         player.sendBlockChange(diggingPosition.toLocation(stage.world), block.getBlockData())
                                         view.setBlock(diggingPosition, block)
