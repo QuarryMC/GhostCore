@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap
 data class ChunkedView(
     val name: String,
     var patternData: PatternData,
-    var isBreakable: Boolean,
+    var damageable: Boolean,
     var bound: BoundingBox,
     /**
      * ConcurrentHashMap<Chunk Position, ConcurrentHashMap<Block Position, Block Data>>
@@ -24,11 +24,11 @@ data class ChunkedView(
     val changedBlocks: ConcurrentHashMap<SimplePosition, GhostBlockData> = ConcurrentHashMap()
 
     override fun isBreakable(): Boolean {
-        return isBreakable;
+        return this.damageable;
     }
 
     override fun setBreakable(breakable: Boolean) {
-        isBreakable = breakable
+        this.damageable = breakable
     }
 
     fun getBlocksInChunk(chunkPosition: SimplePosition): ConcurrentHashMap<SimplePosition, GhostBlockData> {
