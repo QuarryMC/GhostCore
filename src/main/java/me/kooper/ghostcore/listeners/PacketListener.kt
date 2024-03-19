@@ -61,7 +61,7 @@ class PacketListener : SimplePacketListenerAbstract() {
                         it.getViewFromPos(diggingPosition) != null
                     }
                     .mapNotNull {
-                        it.getViewFromPos(diggingPosition) as ChunkedStage
+                        it as? ChunkedStage
                     }
                     .firstOrNull() ?: return
                 val view = stage.getViewFromPos(diggingPosition)!!
