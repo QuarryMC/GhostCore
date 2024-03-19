@@ -3,9 +3,9 @@ package me.kooper.ghostcore
 import com.github.retrooper.packetevents.PacketEvents
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder
 import me.kooper.ghostcore.commands.GhostCommand
+import me.kooper.ghostcore.listeners.PacketListener
 import me.kooper.ghostcore.listeners.StageListeners
 import me.kooper.ghostcore.managers.StageManager
-import me.kooper.ghostcore.old.packets.PacketListener
 import org.bukkit.Material
 import org.bukkit.plugin.java.JavaPlugin
 
