@@ -1,8 +1,8 @@
 package me.kooper.ghostcore.events
 
-import io.papermc.paper.math.Position
-import me.kooper.ghostcore.data.ViewData
 import me.kooper.ghostcore.models.Stage
+import me.kooper.ghostcore.models.View
+import me.kooper.ghostcore.utils.types.SimplePosition
 import org.bukkit.block.data.BlockData
 import org.bukkit.entity.Player
 import org.bukkit.event.Cancellable
@@ -12,9 +12,9 @@ import org.bukkit.event.HandlerList
 @Suppress("UnstableApiUsage")
 class GhostBreakEvent(
     val player: Player,
-    val position: Position,
+    val position: SimplePosition,
     val blockData: BlockData,
-    val view: ViewData,
+    val view: View,
     val stage: Stage
 ) : Event(), Cancellable {
 
@@ -22,6 +22,7 @@ class GhostBreakEvent(
 
     companion object {
         val HANDLERS = HandlerList()
+
         @JvmStatic
         private fun getHandlerList(): HandlerList = HANDLERS
     }

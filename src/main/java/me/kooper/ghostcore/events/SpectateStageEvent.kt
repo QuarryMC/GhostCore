@@ -9,6 +9,7 @@ class SpectateStageEvent(val spectator: Player, val stage: Stage, val isSpectati
 
     companion object {
         private val HANDLERS = HandlerList()
+
         @JvmStatic
         private fun getHandlerList(): HandlerList = HANDLERS
     }

@@ -8,10 +8,11 @@ class DeleteStageEvent(val stage: Stage) : Event() {
 
     companion object {
         private val HANDLERS = HandlerList()
+
         @JvmStatic
         private fun getHandlerList(): HandlerList = HANDLERS
     }
 
-    override fun getHandlers(): HandlerList = DeleteStageEvent.HANDLERS
+    override fun getHandlers(): HandlerList = HANDLERS
 
 }

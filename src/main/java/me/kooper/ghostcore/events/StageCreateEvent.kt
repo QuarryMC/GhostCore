@@ -13,6 +13,6 @@ class StageCreateEvent(val stage: Stage) : Event() {
         private fun getHandlerList(): HandlerList = HANDLERS
     }
 
-    override fun getHandlers(): HandlerList = StageCreateEvent.HANDLERS
+    override fun getHandlers(): HandlerList = HANDLERS
 
 }

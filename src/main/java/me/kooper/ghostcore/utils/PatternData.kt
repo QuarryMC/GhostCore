@@ -1,4 +1,4 @@
-package me.kooper.ghostcore.data
+package me.kooper.ghostcore.utils
 
 import org.bukkit.block.data.BlockData
 import org.decimal4j.util.DoubleRounder

@@ -1,7 +1,7 @@
 package me.kooper.ghostcore.utils
 
-import PositionIterator
 import io.papermc.paper.math.Position
+import me.kooper.ghostcore.utils.types.PositionIterator
 
 @Suppress("UnstableApiUsage")
 object PositionUtils {
@@ -12,9 +12,16 @@ object PositionUtils {
      * @param pos2 The second position.
      * @return A set of positions.
      */
-    fun getLocationsWithin(pos1: Position, pos2: Position) : Set<Position> {
+    fun getLocationsWithin(pos1: Position, pos2: Position): Set<Position> {
         val positions = HashSet<Position>()
-        PositionIterator(pos1.blockX(), pos1.blockY(), pos1.blockZ(), pos2.blockX(), pos2.blockY(), pos2.blockZ()).forEach {
+        PositionIterator(
+            pos1.blockX(),
+            pos1.blockY(),
+            pos1.blockZ(),
+            pos2.blockX(),
+            pos2.blockY(),
+            pos2.blockZ()
+        ).forEach {
             positions.add(it)
         }
         return positions
@@ -26,7 +33,7 @@ object PositionUtils {
      * @param radius The radius to get positions.
      * @return A set of positions.
      */
-    fun getLocationsInRadius(center: Position, radius: Int) : Set<Position> {
+    fun getLocationsInRadius(center: Position, radius: Int): Set<Position> {
         val positions = HashSet<Position>()
 
         val cx = center.blockX()
