@@ -1,8 +1,8 @@
 package me.kooper.ghostcore.events
 
-import me.kooper.ghostcore.utils.types.SimplePosition
 import me.kooper.ghostcore.models.Stage
 import me.kooper.ghostcore.models.View
+import me.kooper.ghostcore.utils.types.SimplePosition
 import org.bukkit.block.data.BlockData
 import org.bukkit.entity.Player
 import org.bukkit.event.Cancellable

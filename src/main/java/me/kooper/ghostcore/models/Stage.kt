@@ -7,7 +7,6 @@ import org.bukkit.World
 import org.bukkit.entity.Player
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.collections.HashMap
 
 abstract class Stage(
     open val world: World,

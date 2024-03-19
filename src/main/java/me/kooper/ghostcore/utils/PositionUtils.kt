@@ -1,7 +1,7 @@
 package me.kooper.ghostcore.utils
 
-import me.kooper.ghostcore.utils.types.PositionIterator
 import io.papermc.paper.math.Position
+import me.kooper.ghostcore.utils.types.PositionIterator
 
 @Suppress("UnstableApiUsage")
 object PositionUtils {
