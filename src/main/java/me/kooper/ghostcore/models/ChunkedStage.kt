@@ -3,7 +3,7 @@ package me.kooper.ghostcore.models
 import io.papermc.paper.math.Position
 import me.kooper.ghostcore.events.JoinStageEvent
 import me.kooper.ghostcore.events.LeaveStageEvent
-import me.kooper.ghostcore.old.data.PatternData
+import me.kooper.ghostcore.utils.PatternData
 import me.kooper.ghostcore.utils.types.GhostBlockData
 import me.kooper.ghostcore.utils.types.SimplePosition
 import org.bukkit.Bukkit

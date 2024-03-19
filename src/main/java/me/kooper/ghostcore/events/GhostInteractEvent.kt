@@ -1,6 +1,5 @@
 package me.kooper.ghostcore.events
 
-import me.kooper.ghostcore.old.data.ChunkedViewData
 import me.kooper.ghostcore.utils.types.SimplePosition
 import me.kooper.ghostcore.models.Stage
 import me.kooper.ghostcore.models.View

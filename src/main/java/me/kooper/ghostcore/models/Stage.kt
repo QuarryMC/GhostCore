@@ -1,6 +1,6 @@
 package me.kooper.ghostcore.models
 
-import me.kooper.ghostcore.old.data.PatternData
+import me.kooper.ghostcore.utils.PatternData
 import me.kooper.ghostcore.utils.types.GhostBlockData
 import me.kooper.ghostcore.utils.types.SimplePosition
 import org.bukkit.World
