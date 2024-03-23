@@ -3,6 +3,8 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/GhostCore.iml" filepath="$PROJECT_DIR$/GhostCore.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/GhostCore.main.iml" filepath="$PROJECT_DIR$/.idea/modules/GhostCore.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/GhostCore.test.iml" filepath="$PROJECT_DIR$/.idea/modules/GhostCore.test.iml" />
     </modules>
   </component>
 </project>

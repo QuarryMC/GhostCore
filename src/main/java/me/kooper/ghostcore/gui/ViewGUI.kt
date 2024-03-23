@@ -93,6 +93,7 @@ class ViewGUI(player: Player, stage: Stage) {
                 {
                     var viewLore: ArrayList<Component> = arrayListOf(
                         Component.text(""),
+                        Component.text("Bound: ${(view as ChunkedView).bound.min()} - ${(view as ChunkedView).bound.max()}"),
                         Component.text("Blocks: ${view.getAllBlocks().size}"),
                         Component.text("Breakable: ${view.isBreakable()}"),
                         Component.text(""),

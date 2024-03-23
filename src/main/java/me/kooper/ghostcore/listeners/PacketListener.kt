@@ -17,6 +17,7 @@ import me.kooper.ghostcore.utils.callEventSync
 import me.kooper.ghostcore.utils.types.SimplePosition
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
+import org.bukkit.Material
 import org.bukkit.entity.Player
 
 @Suppress("UnstableApiUsage")
@@ -49,14 +50,12 @@ class PacketListener : SimplePacketListenerAbstract() {
                 val diggingPosition =
                     SimplePosition.from(digging.blockPosition.x, digging.blockPosition.y, digging.blockPosition.z)
 
-                val block = GhostCore.getInstance().stageManager.getStages(player)
-                    .asSequence().filter {
-                        it.getViewFromPos(diggingPosition) != null
-                    }
-                    .mapNotNull { stage ->
-                        stage.getViewFromPos(diggingPosition)!!.getBlock(diggingPosition)
-                    }
-                    .firstOrNull() ?: return
+                val stages = GhostCore.getInstance().stageManager.getStages(player)
+                val block = stages.map {
+                    it.getViewFromPos(diggingPosition)
+                }.filterNotNull().map {
+                    it.getBlock(diggingPosition)
+                }.firstOrNull() ?: return
 
                 val stage: ChunkedStage = GhostCore.getInstance().stageManager.getStages(player)
                     .asSequence().filter {
@@ -96,9 +95,9 @@ class PacketListener : SimplePacketListenerAbstract() {
                                     if (!ghostBreakEvent.isCancelled) {
                                         player.sendBlockChange(
                                             diggingPosition.toLocation(stage.world),
-                                            block.getBlockData()
+                                            Material.AIR.createBlockData()
                                         )
-                                        view.setBlock(diggingPosition, block)
+                                        view.removeBlock(diggingPosition)
                                     }
                                 }
                             })
@@ -124,23 +123,30 @@ class PacketListener : SimplePacketListenerAbstract() {
                 val world = player.world
                 val chunkX = chunkData.column.x
                 val chunkZ = chunkData.column.z
-                val stage =
+                var stage =
                     GhostCore.getInstance().stageManager.getStages(player).firstOrNull { it.world == world } ?: return
+                stage = stage as ChunkedStage
 
                 val chunkPositions = mutableSetOf<SimplePosition>()
-                for (y in world.minHeight until world.maxHeight step 16) {
+                val minHeight = stage.views.values.sumOf { (it as ChunkedView).bound.minY }
+                val maxHeight = stage.views.values.sumOf { (it as ChunkedView).bound.maxY }
+                for (y in minHeight until maxHeight step 16) {
                     chunkPositions.add(SimplePosition(chunkX * 16, y, chunkZ * 16).getChunk())
                 }
 
                 val chunkedViews = stage.views.filter {
-                    chunkPositions.any { pos -> it.value.hasBlock(pos) }
+                    val view = it.value as ChunkedView
+                    chunkPositions.any { pos -> view.hasChunk(pos) }
                 }.values as Collection<ChunkedView>
 
                 chunkedViews.forEach { view ->
-                    val chunkBlocks = view.getBlocksInChunk(SimplePosition(chunkX, 0, chunkZ))
-                    if (chunkBlocks.isNotEmpty()) {
-                        player.sendMultiBlockChange(chunkBlocks.mapValues { it.value.getBlockData() }
-                            .mapKeys { it.key.toBlockPosition() })
+                    val allChunksInXZ = chunkPositions.filter { view.hasChunk(it) }
+                    allChunksInXZ.forEach { chunkPos ->
+                        val chunkBlocks = view.getBlocksInChunk(chunkPos)
+                        if (chunkBlocks.isNotEmpty()) {
+                            player.sendMultiBlockChange(chunkBlocks.mapValues { it.value.getBlockData() }
+                                .mapKeys { it.key.toBlockPosition() })
+                        }
                     }
                 }
             }

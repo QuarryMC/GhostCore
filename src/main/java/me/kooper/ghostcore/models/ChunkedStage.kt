@@ -3,6 +3,7 @@ package me.kooper.ghostcore.models
 import me.kooper.ghostcore.events.JoinStageEvent
 import me.kooper.ghostcore.events.LeaveStageEvent
 import me.kooper.ghostcore.utils.PatternData
+import me.kooper.ghostcore.utils.SimpleBound
 import me.kooper.ghostcore.utils.types.GhostBlockData
 import me.kooper.ghostcore.utils.types.SimplePosition
 import org.bukkit.Bukkit
@@ -32,17 +33,22 @@ class ChunkedStage(
     }
 
     override fun hideView(name: String) {
+        if (name == "bedrock") return
         val blocks = (views as HashMap<String, ChunkedView>)[name]?.getAllBlocksInBound() ?: return
-        sendBlocks(blocks)
+        val air = Material.AIR.createBlockData()
+        sendBlocks(blocks.mapValues { GhostBlockData(air) })
     }
 
     override fun isWithinView(name: String, position: SimplePosition): Boolean {
-        return (views as HashMap<String, ChunkedView>)[name]?.bound?.contains(position.toVector()) ?: false
+        return (views as HashMap<String, ChunkedView>)[name]?.bound?.contains(position) ?: false
     }
 
     override fun getViewFromPos(position: SimplePosition): View? {
         (views as HashMap<String, ChunkedView>).forEach { (_, view) ->
-            if (view.bound.contains(position.toVector())) return view
+
+            val bound = view.bound
+            if (view.bound.contains(position)) return view
+            else if (view.hasBlock(position)) return view
         }
         return null
     }
@@ -56,9 +62,10 @@ class ChunkedStage(
     ): View? {
         if (views.containsKey(name)) return null
 
-        val bound = BoundingBox.of(minPosition.toVector(), maxPosition.toVector())
+        val bound = SimpleBound(minPosition, maxPosition)
         val view = ChunkedView(name, pattern, isBreakable, bound)
         views[name] = view
+        resetBlocks(name)
         return view
     }
 
@@ -72,24 +79,56 @@ class ChunkedStage(
     override fun setAirBlock(name: String, position: SimplePosition, update: Boolean) {
         val view = (views as HashMap<String, ChunkedView>)[name] ?: return
         view.removeBlock(position)
-        if (update) sendBlocks(mapOf(position to GhostBlockData(Material.AIR.createBlockData())))
+        if (!view.bound.contains(position)) return
+        if (update) {
+            val blocks = mapOf(position to GhostBlockData(Material.AIR.createBlockData()))
+            sendBlocks(blocks)
+        }
     }
 
     override fun setAirBlocks(name: String, positions: Set<SimplePosition>) {
         val view = (views as HashMap<String, ChunkedView>)[name] ?: return
         view.removeBlocks(positions)
-        if (positions.isNotEmpty()) sendBlocks(positions.associateWith { GhostBlockData(Material.AIR.createBlockData()) })
+//        if (positions.isNotEmpty()) sendBlocks(positions.associateWith { GhostBlockData(Material.AIR.createBlockData()) })
+        if (positions.isNotEmpty()) {
+            val blocks = positions.filter { view.bound.contains(it) }.associateWith { GhostBlockData(Material.AIR.createBlockData()) }
+            sendBlocks(blocks)
+        }
     }
 
     override fun resetBlocks(name: String) {
         val view = (views as HashMap<String, ChunkedView>)[name] ?: return
-        val blocksToSet: MutableMap<SimplePosition, GhostBlockData> = ConcurrentHashMap()
-        view.getAllBlocksInBound().forEach { (position, _) ->
-            blocksToSet[position] = GhostBlockData(view.patternData.getRandomBlockData())
-        }
+        if (view.name == "bedrock") {
+            val mineView = views["mine"] ?: return
+            val bound = SimpleBound(
+                mineView.bound.min().apply {
+                    x -= 1
+                    y -= 1
+                    z -= 1
+                },
+                mineView.bound.max().apply {
+                    x += 1
+                    y += 1
+                    z += 1
+                }
+            )
+            val blocksToSet: MutableMap<SimplePosition, GhostBlockData> = ConcurrentHashMap()
+            view.getAllBlocksInBound().forEach { (position, _) ->
+                if (!bound.contains(position)) blocksToSet[position] = GhostBlockData(view.patternData.getRandomBlockData())
+                if (bound.contains(position)) blocksToSet[position] = GhostBlockData(mineView.getBlock(position)?.getBlockData() ?: Material.AIR.createBlockData())
+            }
 
-        view.setBlocks(blocksToSet)
-        sendBlocks(blocksToSet)
+            view.setBlocks(blocksToSet)
+            sendBlocks(blocksToSet)
+        } else {
+            val blocksToSet: MutableMap<SimplePosition, GhostBlockData> = ConcurrentHashMap()
+            view.getAllBlocksInBound().forEach { (position, _) ->
+                blocksToSet[position] = GhostBlockData(view.patternData.getRandomBlockData())
+            }
+
+            view.setBlocks(blocksToSet)
+            sendBlocks(blocksToSet)
+        }
     }
 
     override fun resetSolidBlocks(name: String) {
@@ -106,6 +145,7 @@ class ChunkedStage(
     override fun resetBlock(name: String, position: SimplePosition, blockData: GhostBlockData, update: Boolean) {
         val view = (views as HashMap<String, ChunkedView>)[name] ?: return
         view.setBlock(position, blockData)
+        if (!view.bound.contains(position)) return
         if (update) sendBlocks(mapOf(position to blockData))
     }
 
@@ -131,7 +171,9 @@ class ChunkedStage(
         val blocksToSet: MutableMap<SimplePosition, GhostBlockData> = ConcurrentHashMap()
         positions.forEach { blocksToSet[it] = GhostBlockData(view.patternData.getRandomBlockData()) }
         view.setBlocks(blocksToSet)
-        sendBlocks(blocksToSet)
+        sendBlocks(blocksToSet.filter {
+            view.bound.contains(it.key)
+        })
     }
 
     override fun setBlocks(name: String, positions: List<SimplePosition>, pattern: PatternData) {
@@ -139,26 +181,30 @@ class ChunkedStage(
         val blocksToSet: MutableMap<SimplePosition, GhostBlockData> = ConcurrentHashMap()
         positions.forEach { blocksToSet[it] = GhostBlockData(pattern.getRandomBlockData()) }
         view.setBlocks(blocksToSet)
-        sendBlocks(blocksToSet)
+        sendBlocks(blocksToSet.filter {
+            view.bound.contains(it.key)
+        })
     }
 
     override fun setBlock(name: String, position: SimplePosition, pattern: PatternData, update: Boolean) {
         val view = (views as HashMap<String, ChunkedView>)[name] ?: return
         val blockData = GhostBlockData(pattern.getRandomBlockData())
         view.setBlock(position, blockData)
-        if (update) sendBlocks(mapOf(position to blockData))
+        if (update && view.bound.contains(position)) sendBlocks(mapOf(position to blockData))
     }
 
     override fun setBlock(name: String, position: SimplePosition, blockData: GhostBlockData, update: Boolean) {
         val view = (views as HashMap<String, ChunkedView>)[name] ?: return
         view.setBlock(position, blockData)
-        if (update) sendBlocks(mapOf(position to blockData))
+        if (update && view.bound.contains(position)) sendBlocks(mapOf(position to blockData))
     }
 
     override fun removeBlocks(name: String, blocks: Set<SimplePosition>) {
         val view = (views as HashMap<String, ChunkedView>)[name] ?: return
         view.removeBlocks(blocks)
-        sendBlocks(blocks.associateWith { GhostBlockData(Material.AIR.createBlockData()) })
+        sendBlocks(blocks.filter {
+            view.bound.contains(it)
+        }.associateWith { GhostBlockData(Material.AIR.createBlockData()) })
     }
 
     override fun getViewers(): List<Player> {
@@ -193,9 +239,9 @@ class ChunkedStage(
 
     override fun getHighestPosition(name: String, x: Int, z: Int): SimplePosition? {
         val view = (views as HashMap<String, ChunkedView>)[name] ?: return null
-        val min = view.bound.min.toBlockVector()
-        val max = view.bound.max.toBlockVector()
-        for (y in max.blockY downTo min.blockY) {
+        val min = view.bound.min()
+        val max = view.bound.max()
+        for (y in max.y downTo min.y) {
             val position = SimplePosition(x, y, z)
             if (view.hasBlock(position)) return position
         }
