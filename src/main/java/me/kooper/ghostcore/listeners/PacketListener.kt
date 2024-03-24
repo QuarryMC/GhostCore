@@ -28,9 +28,9 @@ class PacketListener : SimplePacketListenerAbstract() {
             PacketType.Play.Client.PLAYER_BLOCK_PLACEMENT -> {
                 val placement = WrapperPlayClientPlayerBlockPlacement(event)
                 val blockPosition = SimplePosition.from(
-                    placement.blockPosition.x,
-                    placement.blockPosition.y,
-                    placement.blockPosition.z
+                    placement.blockPosition.x + placement.face.modX,
+                    placement.blockPosition.y + placement.face.modY,
+                    placement.blockPosition.z + placement.face.modZ
                 )
 
                 val player = event.player as Player
