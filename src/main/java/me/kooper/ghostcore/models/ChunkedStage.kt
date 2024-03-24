@@ -1,5 +1,6 @@
 package me.kooper.ghostcore.models
 
+import me.kooper.ghostcore.GhostCore
 import me.kooper.ghostcore.events.JoinStageEvent
 import me.kooper.ghostcore.events.LeaveStageEvent
 import me.kooper.ghostcore.utils.PatternData
@@ -225,7 +226,9 @@ class ChunkedStage(
 
     override fun removePlayer(player: Player) {
         audience.remove(player.uniqueId)
-        LeaveStageEvent(player, audience, this).callEvent()
+        Bukkit.getScheduler().runTask(GhostCore.getInstance(), Runnable {
+            run { LeaveStageEvent(player, audience, this).callEvent() }
+        })
 
         if (player.world != world) return
         for (view in views.keys) {
