@@ -22,8 +22,8 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test")
 
     // Provided dependencies
-    implementation("io.papermc.paper:paper-api:1.20.1-R0.1-SNAPSHOT")
-    implementation("com.github.retrooper.packetevents:spigot:2.0.2")
+    compileOnly("io.papermc.paper:paper-api:1.20.1-R0.1-SNAPSHOT")
+    compileOnly("com.github.retrooper.packetevents:spigot:2.0.2")
 
     // Regular dependencies
     implementation("it.unimi.dsi:fastutil:8.5.12")

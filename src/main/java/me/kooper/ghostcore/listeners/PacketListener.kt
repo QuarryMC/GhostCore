@@ -40,6 +40,10 @@ class PacketListener : SimplePacketListenerAbstract() {
                 }
 
                 event.isCancelled = isCancelled
+                val blockAtLoc = player.world.getBlockAt(blockPosition.toLocation(player.world))
+                player.sendBlockChange(blockPosition.toLocation(player.world), blockAtLoc.blockData)
+                player.inventory.setItemInMainHand(player.inventory.itemInMainHand)
+                player.inventory.setItemInOffHand(player.inventory.itemInOffHand)
             }
 
             PacketType.Play.Client.PLAYER_DIGGING -> {
