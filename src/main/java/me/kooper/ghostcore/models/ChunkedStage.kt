@@ -151,8 +151,7 @@ class ChunkedStage(
     }
 
     override fun getSolidBlocks(name: String): Map<SimplePosition, GhostBlockData> {
-        return (views as HashMap<String, ChunkedView>)[name]?.getAllBlocksInBound()
-            ?.filter { it.value.getBlockData().material.isSolid } ?: emptyMap()
+        return (views as HashMap<String, ChunkedView>)[name]?.getAllBlocks() ?: emptyMap()
     }
 
     override fun getBlocks(name: String): ConcurrentHashMap<SimplePosition, GhostBlockData> {
