@@ -57,9 +57,6 @@ class GhostCommand : CommandExecutor {
                 )
                 return true
             }
-            if (args[0].equals("zora-test", true)) {
-                val player: Player = sender
-            }
         }
         return true
     }

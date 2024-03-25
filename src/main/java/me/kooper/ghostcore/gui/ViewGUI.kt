@@ -93,13 +93,13 @@ class ViewGUI(player: Player, stage: Stage) {
                 {
                     var viewLore: ArrayList<Component> = arrayListOf(
                         Component.text(""),
-                        Component.text("Bound: ${(view as ChunkedView).bound.min()} - ${(view as ChunkedView).bound.max()}"),
+                        Component.text("Bound: ${(view as ChunkedView).bound.min()} - ${(view).bound.max()}"),
                         Component.text("Blocks: ${view.getAllBlocks().size}"),
                         Component.text("Breakable: ${view.isBreakable()}"),
                         Component.text(""),
                         Component.text("Pattern:")
                     )
-                    for ((data, chance) in (view as ChunkedView).patternData.blockDataPercentages) {
+                    for ((data, chance) in (view).patternData.blockDataPercentages) {
                         viewLore.add(Component.text(" ➥ ${data.material.name}: ${chance}%"))
                     }
                     viewLore.addAll(listOf(Component.text(""), Component.text("Click to toggle breakability")))

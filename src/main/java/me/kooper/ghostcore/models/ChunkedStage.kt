@@ -11,7 +11,6 @@ import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.entity.Player
-import org.bukkit.util.BoundingBox
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
@@ -47,7 +46,6 @@ class ChunkedStage(
     override fun getViewFromPos(position: SimplePosition): View? {
         (views as HashMap<String, ChunkedView>).forEach { (_, view) ->
 
-            val bound = view.bound
             if (view.bound.contains(position)) return view
             else if (view.hasBlock(position)) return view
         }
@@ -92,7 +90,8 @@ class ChunkedStage(
         view.removeBlocks(positions)
 //        if (positions.isNotEmpty()) sendBlocks(positions.associateWith { GhostBlockData(Material.AIR.createBlockData()) })
         if (positions.isNotEmpty()) {
-            val blocks = positions.filter { view.bound.contains(it) }.associateWith { GhostBlockData(Material.AIR.createBlockData()) }
+            val blocks = positions.filter { view.bound.contains(it) }
+                .associateWith { GhostBlockData(Material.AIR.createBlockData()) }
             sendBlocks(blocks)
         }
     }
@@ -115,8 +114,10 @@ class ChunkedStage(
             )
             val blocksToSet: MutableMap<SimplePosition, GhostBlockData> = ConcurrentHashMap()
             view.getAllBlocksInBound().forEach { (position, _) ->
-                if (!bound.contains(position)) blocksToSet[position] = GhostBlockData(view.patternData.getRandomBlockData())
-                if (bound.contains(position)) blocksToSet[position] = GhostBlockData(mineView.getBlock(position)?.getBlockData() ?: Material.AIR.createBlockData())
+                if (!bound.contains(position)) blocksToSet[position] =
+                    GhostBlockData(view.patternData.getRandomBlockData())
+                if (bound.contains(position)) blocksToSet[position] =
+                    GhostBlockData(mineView.getBlock(position)?.getBlockData() ?: Material.AIR.createBlockData())
             }
 
             view.setBlocks(blocksToSet)
@@ -213,7 +214,7 @@ class ChunkedStage(
 
     override fun addPlayer(player: Player) {
         audience.add(player.uniqueId)
-        JoinStageEvent(player, audience, this).callEvent()
+        JoinStageEvent(player, audience.toList() as ArrayList<UUID>, this).callEvent()
 
         if (player.world != world) return
         for (view in views.keys) {
@@ -225,18 +226,30 @@ class ChunkedStage(
 
     override fun removePlayer(player: Player) {
         audience.remove(player.uniqueId)
-        Bukkit.getScheduler().runTask(GhostCore.getInstance(), Runnable {
-            run { LeaveStageEvent(player, audience, this).callEvent() }
-        })
+        LeaveStageEvent(player, audience, this).callEvent()
 
-        if (player.world != world) return
-        for (view in views.keys) {
-            val blocks = getBlocks(view).toMutableMap()
-            val airBlock = GhostBlockData(Material.AIR.createBlockData())
-            blocks.forEach { (position, _) -> blocks[position] = airBlock }
-            player.sendMultiBlockChange(blocks.mapValues { it.value.getBlockData() }
-                .mapKeys { it.key.toBlockPosition() })
-        }
+        Bukkit.getScheduler().runTaskAsynchronously(GhostCore.getInstance(), Runnable {
+            run {
+                if (player.world != world) return@run
+                val airBlockData = Material.AIR.createBlockData()
+                for (view in views.values) {
+                    val blocks = (view as ChunkedView).getAllBlocksInBound()
+                        .mapValues { airBlockData }
+                        .mapKeys { it.key.toBlockPosition() }
+
+                    Bukkit.getScheduler().runTaskLaterAsynchronously(
+                        GhostCore.getInstance(),
+                        Runnable {
+                            run {
+                                player.sendMultiBlockChange(blocks)
+                            }
+                        },
+                        10
+                    )
+
+                }
+            }
+        })
     }
 
     override fun getHighestPosition(name: String, x: Int, z: Int): SimplePosition? {
