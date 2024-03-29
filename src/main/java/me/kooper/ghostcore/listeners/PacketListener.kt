@@ -13,6 +13,7 @@ import me.kooper.ghostcore.events.GhostBreakEvent
 import me.kooper.ghostcore.events.GhostInteractEvent
 import me.kooper.ghostcore.models.ChunkedStage
 import me.kooper.ghostcore.models.ChunkedView
+import me.kooper.ghostcore.utils.blocks.chunkedMultiBlockChange
 import me.kooper.ghostcore.utils.callEventSync
 import me.kooper.ghostcore.utils.types.SimplePosition
 import org.bukkit.Bukkit
@@ -50,6 +51,7 @@ class PacketListener : SimplePacketListenerAbstract() {
             PacketType.Play.Client.PLAYER_DIGGING -> {
                 val digging = WrapperPlayClientPlayerDigging(event)
                 val actionType = digging.action
+
 
                 val player = event.player as Player
                 val diggingPosition =

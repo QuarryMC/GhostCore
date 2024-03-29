@@ -5,6 +5,8 @@ import me.kooper.ghostcore.events.JoinStageEvent
 import me.kooper.ghostcore.events.LeaveStageEvent
 import me.kooper.ghostcore.utils.PatternData
 import me.kooper.ghostcore.utils.SimpleBound
+import me.kooper.ghostcore.utils.blocks.chunkedMultiBlockChange
+import me.kooper.ghostcore.utils.blocks.unchunkedMultiBlockChange
 import me.kooper.ghostcore.utils.types.GhostBlockData
 import me.kooper.ghostcore.utils.types.SimplePosition
 import org.bukkit.Bukkit
@@ -69,9 +71,8 @@ class ChunkedStage(
     }
 
     override fun sendBlocks(blocks: Map<SimplePosition, GhostBlockData>) {
-        val mappedData = blocks.mapValues { it.value.getBlockData() }.mapKeys { it.key.toBlockPosition() }
         for (viewer in getViewers()) {
-            viewer.sendMultiBlockChange(mappedData)
+            viewer.unchunkedMultiBlockChange(blocks)
         }
     }
 
@@ -218,9 +219,7 @@ class ChunkedStage(
 
         if (player.world != world) return
         for (view in views.keys) {
-            player.sendMultiBlockChange(
-                (views as HashMap<String, ChunkedView>)[view]?.getAllBlocks()?.mapValues { it.value.getBlockData() }
-                    ?.mapKeys { it.key.toBlockPosition() } ?: emptyMap())
+            player.chunkedMultiBlockChange((views as HashMap<String, ChunkedView>)[view]?.blocks ?: emptyMap())
         }
     }
 
@@ -233,15 +232,13 @@ class ChunkedStage(
                 if (player.world != world) return@run
                 val airBlockData = Material.AIR.createBlockData()
                 for (view in views.values) {
-                    val blocks = (view as ChunkedView).getAllBlocksInBound()
-                        .mapValues { airBlockData }
-                        .mapKeys { it.key.toBlockPosition() }
+                    val blocks = (view as ChunkedView).blocks.mapValues { it.value.mapValues { GhostBlockData(airBlockData) } }
 
                     Bukkit.getScheduler().runTaskLaterAsynchronously(
                         GhostCore.getInstance(),
                         Runnable {
                             run {
-                                player.sendMultiBlockChange(blocks)
+                                player.chunkedMultiBlockChange(blocks)
                             }
                         },
                         10

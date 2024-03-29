@@ -3,6 +3,7 @@ package me.kooper.ghostcore.commands
 import me.kooper.ghostcore.GhostCore
 import me.kooper.ghostcore.gui.StageGUI
 import me.kooper.ghostcore.utils.PositionUtils
+import me.kooper.ghostcore.utils.blocks.tasksWorking
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextColor
 import org.bukkit.Bukkit
@@ -37,6 +38,16 @@ class GhostCommand : CommandExecutor {
                 )
                 return true
             }
+
+            if (args[0].lowercase().contentEquals("pause-tasks")) {
+                tasksWorking = !tasksWorking
+                sender.sendMessage(
+                    Component.text("Tasks are now ${if (tasksWorking) "working" else "paused"}")
+                        .color(TextColor.color(255, 204, 205))
+                )
+                return true
+            }
+
             if (args[0].lowercase().contentEquals("spectate")) {
                 val player: Player? = Bukkit.getPlayer(args[1])
                 if (player == null || !player.isOnline) {

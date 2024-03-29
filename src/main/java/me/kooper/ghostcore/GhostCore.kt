@@ -6,6 +6,8 @@ import me.kooper.ghostcore.commands.GhostCommand
 import me.kooper.ghostcore.listeners.PacketListener
 import me.kooper.ghostcore.listeners.StageListeners
 import me.kooper.ghostcore.managers.StageManager
+import me.kooper.ghostcore.utils.SchedulerAssist
+import me.kooper.ghostcore.utils.blocks.blocksToSend
 import org.bukkit.Material
 import org.bukkit.plugin.java.JavaPlugin
 
@@ -47,6 +49,15 @@ class GhostCore : JavaPlugin() {
         PacketEvents.getAPI().init()
         server.getPluginCommand("ghost")!!.setExecutor(GhostCommand())
         server.pluginManager.registerEvents(StageListeners(), this)
+
+        SchedulerAssist {
+            blocksToSend.forEach { (uuid, _) ->
+                val player = server.getPlayer(uuid)
+                if (player != null) {
+                    blocksToSend.remove(uuid)
+                }
+            }
+        }.runTimerAsync(0, 100)
     }
 
     override fun onDisable() {
