@@ -14,15 +14,22 @@ import me.kooper.ghostcore.events.GhostInteractEvent
 import me.kooper.ghostcore.models.ChunkedStage
 import me.kooper.ghostcore.models.ChunkedView
 import me.kooper.ghostcore.utils.blocks.chunkedMultiBlockChange
+import me.kooper.ghostcore.utils.blocks.unchunkedMultiBlockChange
 import me.kooper.ghostcore.utils.callEventSync
 import me.kooper.ghostcore.utils.types.SimplePosition
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.Material
 import org.bukkit.entity.Player
+import java.util.UUID
 
 @Suppress("UnstableApiUsage")
 class PacketListener : SimplePacketListenerAbstract() {
+
+    val invalidBreaksLastSecond = mutableMapOf<UUID, Long>()
 
     override fun onPacketPlayReceive(event: PacketPlayReceiveEvent) {
         when (event.packetType) {
@@ -38,6 +45,10 @@ class PacketListener : SimplePacketListenerAbstract() {
                 val isCancelled = GhostCore.getInstance().stageManager.getStages(player)
                     .filter { it.getViewFromPos(blockPosition) != null }.any { stage ->
                     stage.getViewFromPos(blockPosition)!!.hasBlock(blockPosition) && stage.world == player.world
+                }
+
+                if (isCancelled && PlainTextComponentSerializer.plainText().serialize(player.inventory.itemInMainHand.displayName()).contains("Kraken Crate", true)) {
+                    player.sendMessage(Component.text("You can't place these in the mine.", NamedTextColor.RED))
                 }
 
                 event.isCancelled = isCancelled
@@ -62,7 +73,39 @@ class PacketListener : SimplePacketListenerAbstract() {
                     it.getViewFromPos(diggingPosition)
                 }.filterNotNull().map {
                     it.getBlock(diggingPosition)
-                }.firstOrNull() ?: return
+                }.firstOrNull()
+
+                if (block == null) {
+                    val blockAt = player.world.getBlockAt(diggingPosition.toLocation(player.world))
+                    player.sendBlockChange(diggingPosition.toLocation(player.world), blockAt.blockData)
+
+                    val view = stages.firstNotNullOfOrNull {
+                        it.getViewFromPos(diggingPosition)
+                    } as? ChunkedView ?: return
+
+                    if (blockAt.type.isAir) {
+                        val newTotal = invalidBreaksLastSecond.getOrDefault(player.uniqueId, 0) + 1
+                        invalidBreaksLastSecond[player.uniqueId] = newTotal
+                        if (newTotal >= 10) {
+                            player.unchunkedMultiBlockChange(view.getAllBlocksInBound())
+                            invalidBreaksLastSecond.remove(player.uniqueId)
+                        }
+                        Bukkit.getScheduler().runTaskLater(GhostCore.getInstance(), Runnable {
+                            run {
+                                if (invalidBreaksLastSecond[player.uniqueId] == null) return@run
+
+                                invalidBreaksLastSecond[player.uniqueId] = invalidBreaksLastSecond[player.uniqueId]!! - 1
+
+                                if (invalidBreaksLastSecond[player.uniqueId]!! <= 0)
+                                    invalidBreaksLastSecond.remove(player.uniqueId)
+                            }
+                        }, 20L)
+//                        player.unchunkedMultiBlockChange(view.getBlocksInChunkWithAir(stages.find { it.views.contains(view.name)  }!! as ChunkedStage, diggingPosition.getChunk()))
+                    }
+
+                    return
+                }
+
 
                 val stage: ChunkedStage = GhostCore.getInstance().stageManager.getStages(player)
                     .asSequence().filter {

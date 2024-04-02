@@ -1,5 +1,7 @@
 package me.kooper.ghostcore.utils
 
+import org.bukkit.Bukkit
+import org.bukkit.Material
 import org.bukkit.block.data.BlockData
 import org.decimal4j.util.DoubleRounder
 
@@ -13,6 +15,10 @@ class PatternData(val blockDataPercentages: Map<BlockData, Double>) {
         }
         require(DoubleRounder.round(blockDataPercentages.values.sum(), 5) <= 1.0) {
             "Sum of percentages must not exceed 1.0"
+        }
+
+        if (blockDataPercentages.keys.any { it.material.equals(Material.BEACON) }) {
+            Bukkit.broadcast("Beacon found in pattern data: ${blockDataPercentages.map { "\n${it.key.material} : ${it.value}" }}", "quarry.admin")
         }
     }
 

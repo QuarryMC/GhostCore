@@ -5,11 +5,11 @@ import org.bukkit.block.data.BlockData
 class GhostBlockData(val block: BlockData) {
 
     companion object {
-        val blockData: HashMap<Byte, BlockData> = HashMap()
-        var nextId: Byte = 0
+        val blockData: HashMap<Short, BlockData> = HashMap()
+        var nextId: Short = 0
     }
 
-    private var id: Byte = 0
+    private var id: Short = 0
 
     init {
         if (blockData.containsValue(block)) {

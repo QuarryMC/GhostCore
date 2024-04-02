@@ -81,9 +81,11 @@ class StageManager {
 
     fun toggleSpectate(player: Player, stage: Stage) {
         if (spectatorPrevStages[player.uniqueId] != null && !stage.audience.contains(player.uniqueId)) {
-            player.sendMessage(
-                Component.text("You are already spectating a player.").color(TextColor.color(233, 233, 233))
-            )
+            spectatorPrevStages[player.uniqueId]!!.forEach {
+                if (it != stage && it.audience.contains(player.uniqueId)) {
+                    it.removePlayer(player)
+                }
+            }
             return
         }
         if (stage.audience.contains(player.uniqueId)) {

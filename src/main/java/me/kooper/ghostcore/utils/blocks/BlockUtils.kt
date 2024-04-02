@@ -26,7 +26,7 @@ fun Player.unchunkedMultiBlockChange(blocks: Map<SimplePosition, GhostBlockData>
 fun Player.chunkedMultiBlockChange(blocks: Map<SimplePosition, Map<SimplePosition, GhostBlockData>>) {
     val concurrentHashMap = ConcurrentHashMap<SimplePosition, ConcurrentHashMap<SimplePosition, GhostBlockData>>()
     blocks.forEach { (key, value) ->
-        concurrentHashMap[key] = ConcurrentHashMap(value)
+        concurrentHashMap[key] = ConcurrentHashMap(value.toMutableMap())
     }
 
     this.chunkedMultiBlockChangeMutable(concurrentHashMap)
@@ -35,19 +35,37 @@ fun Player.chunkedMultiBlockChange(blocks: Map<SimplePosition, Map<SimplePositio
 fun Player.chunkedMultiBlockChangeMutable(blocks: ConcurrentHashMap<SimplePosition, ConcurrentHashMap<SimplePosition, GhostBlockData>>) {
 
 
-    var total = 0
-    blocks.forEach { (_, blockData) ->
-        total += blockData.size
-        if (total > 5000) return
-    }
-    if (!tasksWorking || total <= 4999) {
-        this.sendMultiBlockChange(blocks.flatMap { (_, blockData) ->
-            blockData.map { (blockPosition, ghostBlockData) ->
-                Position.block(blockPosition.x, blockPosition.y, blockPosition.z) to ghostBlockData.block
+    if (!tasksWorking || blocks.values.sumOf { it.size } <= 4500) {
+        blocks.forEach { (_, blockData) ->
+            blockData.forEach { (blockPosition, ghostBlockData) ->
+                this.sendMultiBlockChange(
+                    mapOf(
+                        Position.block(
+                            blockPosition.x,
+                            blockPosition.y,
+                            blockPosition.z
+                        ) to ghostBlockData.block
+                    )
+                )
             }
-        }.toMap())
+        }
+        // Add it to the task anyway
+        if (tasksWorking) {
+            if (blocksToSend[this.uniqueId] == null) {
+                blocksToSend[this.uniqueId] = mutableListOf(blocks)
+            } else {
+                // Recreate the list with the old stuff included as well
+                try {
+                    blocksToSend[this.uniqueId]?.add(blocks) ?: mutableListOf(blocks)
+                } catch (e: ArrayIndexOutOfBoundsException) {
+                    println("Error adding blocks to list, recreating list instead: ${blocksToSend[this.uniqueId]?.size ?: 0}")
+                    blocksToSend[this.uniqueId] = mutableListOf(blocks)
+                }
+            }
+        }
         return
     }
+
 
 
     if (blocksToSend[this.uniqueId] == null) {
@@ -62,20 +80,27 @@ fun Player.chunkedMultiBlockChangeMutable(blocks: ConcurrentHashMap<SimplePositi
     val task = SchedulerAssist {
         if (running) return@SchedulerAssist
         running = true
-        val next = blocksToSend[this.uniqueId]?.get(0)
+        var next = blocksToSend[this.uniqueId]?.getOrNull(0)
         if (next == null) {
             blocksToSend.remove(this.uniqueId)
             return@SchedulerAssist
         }
 
+        while (next?.entries?.sumOf { it.value.size } == 1) {
+            val singleBlock = next.entries.first()
+            this.sendBlockChange(Position.block(singleBlock.key.x, singleBlock.key.y, singleBlock.key.z).toLocation(world), singleBlock.value.entries.first().value.block)
+            blocksToSend[this.uniqueId]?.removeAt(0)
+            next = blocksToSend[this.uniqueId]?.getOrNull(0)
+        }
+
         SchedulerAssist {
-            next.entries.sortedBy {
+            next?.entries?.sortedBy {
                 it.key.distanceSquared(SimplePosition(this.location.blockX/16, this.location.blockY/16, this.location.blockZ/16))
-            }.forEach { (_, blockData) ->
+            }?.forEach { (_, blockData) ->
                 this.sendMultiBlockChange(blockData.map { (blockPosition, ghostBlockData) ->
                     Position.block(blockPosition.x, blockPosition.y, blockPosition.z) to ghostBlockData.block
                 }.toMap())
-                Thread.sleep(5)
+                Thread.sleep(2)
             }
             blocksToSend[this.uniqueId]?.remove(next)
             running = false

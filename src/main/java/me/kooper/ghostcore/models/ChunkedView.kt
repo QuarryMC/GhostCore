@@ -4,6 +4,7 @@ import me.kooper.ghostcore.utils.PatternData
 import me.kooper.ghostcore.utils.SimpleBound
 import me.kooper.ghostcore.utils.types.GhostBlockData
 import me.kooper.ghostcore.utils.types.SimplePosition
+import me.kooper.ghostcore.utils.types.toSimplePosition
 import org.bukkit.Material
 import org.bukkit.util.BoundingBox
 import org.bukkit.util.Vector
@@ -35,6 +36,23 @@ data class ChunkedView(
 
     fun getBlocksInChunk(chunkPosition: SimplePosition): ConcurrentHashMap<SimplePosition, GhostBlockData> {
         return blocks.getOrDefault(chunkPosition, ConcurrentHashMap())
+    }
+
+    fun getBlocksInChunkWithAir(stage: ChunkedStage, chunkPosition: SimplePosition): ConcurrentHashMap<SimplePosition, GhostBlockData> {
+        val chunkBlocks = getBlocksInChunk(chunkPosition)
+        val m = chunkPosition.toVector().multiply(16)
+        val max = m.add(Vector(15, 15, 15)).toSimplePosition()
+        val min = m.toSimplePosition()
+        for (x in min.x..max.x) {
+            for (y in min.y..max.y) {
+                for (z in min.z..max.z) {
+                    val position = SimplePosition(x, y, z)
+                    val block = getBlock(position) ?: GhostBlockData(position.toLocation(stage.world).block.blockData)
+                    chunkBlocks.putIfAbsent(position, block)
+                }
+            }
+        }
+        return chunkBlocks
     }
 
     fun getAllBlocksInBound(): Map<SimplePosition, GhostBlockData> {

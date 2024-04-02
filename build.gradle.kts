@@ -23,7 +23,8 @@ dependencies {
 
     // Provided dependencies
     compileOnly("io.papermc.paper:paper-api:1.20.1-R0.1-SNAPSHOT")
-    compileOnly("com.github.retrooper.packetevents:spigot:2.0.2")
+    // compile only for file "/depends/packetevents-reportcards-patch.jar"
+    compileOnly(files("depends/packetevents-reportcards-patch.jar"))
 
     // Regular dependencies
     implementation("it.unimi.dsi:fastutil:8.5.12")
