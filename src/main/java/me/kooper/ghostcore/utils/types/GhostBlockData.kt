@@ -2,7 +2,7 @@ package me.kooper.ghostcore.utils.types
 
 import org.bukkit.block.data.BlockData
 
-class GhostBlockData(val block: BlockData) {
+class GhostBlockData(block: BlockData) {
 
     companion object {
         val blockData: HashMap<Short, BlockData> = HashMap()
@@ -10,6 +10,9 @@ class GhostBlockData(val block: BlockData) {
     }
 
     private var id: Short = 0
+
+    val block: BlockData
+    get() {return blockData[id]!!}
 
     init {
         if (blockData.containsValue(block)) {
